@@ -1,7 +1,6 @@
 import pkg from 'pg'
 import DATABASE from '../config/db.js'
 const { Pool } = pkg
-
 // Crear la conexión a la base de datos
 const pool = new Pool({
   host: DATABASE.host,
@@ -15,6 +14,7 @@ const pool = new Pool({
 const connectDB = async () => {
   try {
     const client = await pool.connect()
+
     return client
   } catch (err) {
     console.error('Error en la conexión a la base de datos')
