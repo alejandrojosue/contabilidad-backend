@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        .person {
+            width: 100%;
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            align-content: center;
+        }
+
+        .cabeza {
+            width: 70px;
+            height: 120px;
+            background-color: bisque;
+            margin: 0px auto;
+            border-radius: 25px;
+            border: 1px solid #444;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cabeza .cabello {
+            position: absolute;
+            padding: 20px 20px 10px;
+            width: inherit;
+            background-color: #444;
+        }
+
+        .cabeza .cabello div {
+            background-color: inherit;
+            width: 18px;
+            height: 20px;
+            border-radius: 50%;
+            position: absolute;
+            left: 0;
+            bottom: -11px;
+        }
+
+        .cabeza .cabello div:nth-child(2) {
+            left: 17px;
+        }
+
+        .cabeza .cabello div:nth-child(3) {
+            left: 35px;
+        }
+
+        .cabeza .cabello div:nth-child(4) {
+            left: 53px;
+        }
+
+        .cabeza .ojos {
+            width: inherit;
+            height: auto;
+            /* background-color: #444; */
+            position: absolute;
+            top: 50px;
+            display: flex;
+        }
+
+        .cabeza .ojos .ojo {
+            padding: 7px;
+            background-color: #444;
+            border-radius: 50%;
+            margin: auto;
+        }
+
+        .cabeza .boca {
+            padding: 15px;
+            border: 3px solid #444;
+            position: absolute;
+            bottom: 25px;
+            border-radius: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .cabeza .boca::after {
+            content: '';
+            background-color: bisque;
+            width: 40px;
+            height: 60%;
+            position: absolute;
+            border-radius: 6px;
+            top: -3px;
+            left: -4px;
+        }
+
+        .cuerpo {
+            margin: auto;
+        }
+
+        .brazo-izquierdo,
+        .brazo-derecho {
+            width: 120px;
+            height: 30px;
+            background-color: bisque;
+            transition: all .5s;
+            border: 1px solid #444;
+            border-radius: 20px;
+        }
+
+        .brazo-izquierdo {
+            transform: translate(5%, 10%) rotate(10deg);
+        }
+
+        .brazo-derecho {
+            transform: translate(-5%, -100%) rotate(-10deg);
+        }
+
+        .ver-izq {
+            transform: rotate(-88deg) translate(25%, -135%);
+        }
+
+        .especial-der {
+            transform: rotate(75deg) translate(-50%, -135%);
+        }
+
+        .especial-izq {
+            transform: rotate(-75deg) translate(25%, -135%);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="person">
+        <div class="cabeza">
+            <div class="cabello">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="ojos">
+                <div class="ojo"></div>
+                <div class="ojo"></div>
+            </div>
+            <div class="boca"></div>
+        </div>
+        <div class="cuerpo">
+            <div class="brazo-izquierdo"></div>
+            <div class="brazo-derecho"></div>
+        </div>
+    </div>
+    <button id="tapar-vista">NO VER</button>
+    <button id="destapar-ojo">VER POCO</button>
+    <script>
+        document.querySelector('#tapar-vista').addEventListener('click', () => {
+            document.querySelector('.brazo-derecho').classList.toggle('especial-der')
+            document.querySelector('.brazo-izquierdo').classList.toggle('especial-izq')
+        })
+        document.querySelector('#destapar-ojo').addEventListener('click', () => {
+            document.querySelector('.brazo-izquierdo').classList.toggle('especial-izq')
+            document.querySelector('.brazo-izquierdo').classList.toggle('ver-izq')
+        })
+
+    </script>
+</body>
+
+</html>
