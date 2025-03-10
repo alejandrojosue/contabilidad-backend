@@ -1,4 +1,4 @@
-const allowedOrigins = ['*'] // Dominios permitidos
+const allowedOrigins = ['216.198.79.129'] // Dominios permitidos
 
 const CORS_OPTIONS = {
   origin: function (origin, callback) {
