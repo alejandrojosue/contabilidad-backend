@@ -2,7 +2,7 @@ import { response, request } from 'express'
 import { pool } from '../database/config.js'
 import { REST } from '../config/api.js'
 import { processAPI, processAPIDetails } from '../helpers/api_call.js'
-export const get = async (req = request, res = response) => {
+export const post = async (req = request, res = response) => {
   const { limit = REST.defaultLimit, from = 100 } = req.query
   const { user, origin, channel, uType } = req.body
   const ref = await processAPI({
@@ -11,7 +11,7 @@ export const get = async (req = request, res = response) => {
     uri: req.originalUrl,
     useri: user,
     uType,
-    act: 'GET'
+    act: req.method.toUpperCase()
   })
   try {
     const result = await pool.query(
