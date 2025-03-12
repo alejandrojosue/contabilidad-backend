@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { check } from 'express-validator'
 
 import { fieldsValidate } from '../middlewares/index.js'
-import { usersGet, usersPost } from '../controllers/users.js'
+import { usersGet, usersPost } from '../controllers/usersAdmin.js'
 
 const router = Router()
 

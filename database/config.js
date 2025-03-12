@@ -13,9 +13,7 @@ const pool = new Pool({
 
 const connectDB = async () => {
   try {
-    const client = await pool.connect()
-
-    return client
+    return await pool.connect()
   } catch (err) {
     console.error('Error en la conexión a la base de datos')
     // process.exit(1)
