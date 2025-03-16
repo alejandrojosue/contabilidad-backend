@@ -2,7 +2,7 @@ import { logApiMiddleware } from '../middlewares/log-api-middleware.js'
 import { pool } from '../database/config.js'
 import bcryptjs from 'bcryptjs'
 import { request, response } from 'express'
-import { generate } from '../helpers/jwt-generate.js'
+import { decodeToken, generate } from '../helpers/jwt-generate.js'
 import { sendConfirmationEmail } from '../helpers/send-email.js'
 
 export const login = logApiMiddleware(async (req = request, res = response) => {
@@ -59,8 +59,7 @@ export const register = logApiMiddleware(async (req = request, res = response) =
     if (!userId) throw { status: 409, code: errorCode }
 
     res.locals.trm1 = ['RE', 'DA']
-    res.locals.trm2 = ['0000']
-    res.locals.trm3 = ['', `${userId}|${email}|${username}`]
+    res.locals.trm2 = ['0000', `${userId}|${email}|${username}`]
     await sendConfirmationEmail(username, email, jwt)
     res.status(201).json({
       id: userId,
@@ -82,5 +81,24 @@ export const forgotPassword = logApiMiddleware(async (req = request, res = respo
 })
 
 export const confirmation = logApiMiddleware(async (req = request, res = response) => {
+  const { token } = req.body
+  const { uid } = decodeToken(token)
+  try {
+    const email = uid.split('|')[0]
+    const result = await pool.query('select * from public.confirm_user($1,$2)', [email, token])
+    const userId = result?.rows[0]?.userid
+    const errorCode = result?.rows[0]?.errorcode
 
+    // eslint-disable-next-line
+    if (!userId) throw { status: 400, code: errorCode }
+    res.locals.trm1 = ['RE', 'DA']
+    res.locals.trm2 = ['0000', `${userId}|${email}`]
+    res.status(200).json({
+      id: userId,
+      email
+    })
+  } catch (error) {
+    // eslint-disable-next-line
+    throw { status: error.status ?? 500, code: error.code, message: error.message }
+  }
 })

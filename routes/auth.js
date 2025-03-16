@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { check } from 'express-validator'
-import { login, register } from '../controllers/auth.js'
+import { login, register, confirmation } from '../controllers/auth.js'
 import { fieldsValidate } from '../middlewares/fields-validate.js'
 const router = Router()
 
@@ -21,5 +21,12 @@ router.post('/register', [
   check('channel', 'El canal es obligatorio').not().isEmpty().isIn(['W', 'M']).withMessage('El tipo de canal debe ser W o M'),
   fieldsValidate
 ], register)
+
+router.post('/confirm', [
+  check('token', 'El token es obligatorio').not().isEmpty(),
+  check('origin', 'El origen es obligatorio').not().isEmpty().isIP().withMessage('El origen no es válido'),
+  check('channel', 'El canal es obligatorio').not().isEmpty().isIn(['W', 'M']).withMessage('El tipo de canal debe ser W o M'),
+  fieldsValidate
+], confirmation)
 
 export default router
