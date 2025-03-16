@@ -5,8 +5,11 @@ import cors from 'cors'
 import { CORS_OPTIONS } from '../config/cors.js'
 import userRoutes from '../routes/user.js'
 import auditingRoutes from '../routes/auditing.js'
+import authRoutes from '../routes/auth.js'
 import { connectDB } from '../database/config.js'
 import { corsErrorMiddleware } from '../middlewares/error-cors.js'
+import { validateDBConnection } from '../middlewares/validate-db-connection.js'
+import { notFoundMiddleware } from '../middlewares/not-found.js'
 
 export default class Server {
   constructor () {
@@ -23,14 +26,15 @@ export default class Server {
 
     this.routes()
 
+    // Middleware para rutas no encontradas (404)
+    this.app.use(notFoundMiddleware)
+
     this.database()
   }
 
   middlewares () {
-    // Helmet
     this.app.use(helmet())
 
-    // Morgan
     this.app.use(morgan('[:date[clf]] :response-time ms :remote-addr :method :url :status'))
 
     // Lectura y parseo del body
@@ -42,10 +46,14 @@ export default class Server {
     // DNS allowed
     this.app.use(cors(CORS_OPTIONS))
     this.app.use(corsErrorMiddleware)
+
+    // Middleware para verificar la conexión a la base de datos
+    this.app.use(validateDBConnection)
   }
 
   routes () {
     this.app.use(this.paths.users, userRoutes)
+    this.app.use(this.paths.auth, authRoutes)
     this.app.use(this.paths.auditing, auditingRoutes)
   }
 

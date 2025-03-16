@@ -15,7 +15,8 @@ const DATABASE = {
   password: DB_PASSWORD || '',
   database: DB_NAME || 'db_dev',
   port: DB_PORT || 5432,
-  schema: DB_SCHEMA || 'public'
+  schema: DB_SCHEMA || 'public',
+  dbTimeout: 5000
 }
 
 export default DATABASE

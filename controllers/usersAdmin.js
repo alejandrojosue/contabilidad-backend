@@ -1,41 +1,45 @@
 import { response, request } from 'express'
 import { pool } from '../database/config.js'
-// const bcryptjs from 'bcryptjs')
+// import { REST } from '../config/api.js'
+import { logApiMiddleware } from '../middlewares/log-api-middleware.js'
+
+// import { pool } from '../database/config.js'
+// import bcryptjs from 'bcryptjs'
 // const User from '../models/user')
 
-const usersGet = async (req = request, res = response) => {
-  try {
-    // const { usersLimit = 12, from = 0 } = req.query;
-    // const userStatus = { estado: true };
-    const result = await pool.query('SELECT * FROM VUSADM')
-    // const [usersCount, users] = await Promise.all([
-    //     User.countDocuments(userStatus),
-    //     User.find(userStatus)
-    //         .skip(Number(from))
-    //         .limit(parseInt(usersLimit))
-    // ]);
-    // res.render('users', {
-    //     title: 'Usuarios',
-    //     users,
-    //     usersCount
-    // })
-    res.json({
-      values: result.rows,
-      count: result.rowCount,
-      fields: result.fields.map(field => field.name)
-    })
-  } catch (error) {
-    res.status(500).json({
-      msg: 'Error interno del servidor',
-      error: error.message,
-      code: error.code
-    })
-  }
+export const usersGet = async (req = request, res = response) => {
+  // try {
+  //   // const { usersLimit = 12, from = 0 } = req.query;
+  //   // const userStatus = { estado: true };
+  //   const result = await pool.query('SELECT * FROM VUSADM')
+  //   // const [usersCount, users] = await Promise.all([
+  //   //     User.countDocuments(userStatus),
+  //   //     User.find(userStatus)
+  //   //         .skip(Number(from))
+  //   //         .limit(parseInt(usersLimit))
+  //   // ]);
+  //   // res.render('users', {
+  //   //     title: 'Usuarios',
+  //   //     users,
+  //   //     usersCount
+  //   // })
+  //   res.json({
+  //     values: result.rows,
+  //     count: result.rowCount,
+  //     fields: result.fields.map(field => field.name)
+  //   })
+  // } catch (error) {
+  //   res.status(500).json({
+  //     msg: 'Error interno del servidor',
+  //     error: error.message,
+  //     code: error.code
+  //   })
+  // }
+  // const salt = await bcrypt.genSalt(10);
 
   // res.json({
-  //     usersCount,
-  //     users
-  // });
+  //   user: '123123'
+  // })
 }
 // const usersPut = async (req, res = response) => {
 //     const { id } = req.params;
@@ -54,11 +58,21 @@ const usersGet = async (req = request, res = response) => {
 //         user
 //     });
 // }
-const usersPost = async (req, res = response) => {
-  res.json({
-    msg: 'Post API - Controlador'
-  })
-}
+
+export const post = logApiMiddleware(async (req = request, res = response) => {
+  const { firstname, lastname, email, username, password, resetPasswordToken, registrationToken, isActive, roles, createdByUserId, updatedByUserId, userType } = req.body
+
+  try {
+    await pool.query(
+      'SELECT insert_strapi_administrator($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
+      [firstname, lastname, email, username, password, resetPasswordToken, registrationToken, isActive, roles, createdByUserId, updatedByUserId, userType]
+    )
+  } catch (error) {
+    // eslint-disable-next-line
+    throw { status: 500, code: error.code, message: error.message }
+  }
+})
+
 // const usersPost = async (req, res = response) => {
 
 //     const { nombre, correo, clave, rol } = req.body;
@@ -88,11 +102,3 @@ const usersPost = async (req, res = response) => {
 //         msg: 'Path API - Controlador'
 //     });
 // }
-
-export {
-  usersGet,
-  // usersPut,
-  usersPost
-  // usersDelete,
-  // usersPatch
-}

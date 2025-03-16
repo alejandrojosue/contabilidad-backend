@@ -20,7 +20,12 @@ export const fieldsValidate = (req, res, next) => {
     })
       .catch(ref => ref)
 
-    return res.status(400).json(errors)
+    return res.status(400).json({
+      error: {
+        msg: 'Datos no válidos.',
+        details: errors.array()
+      }
+    })
   }
   next()
 }

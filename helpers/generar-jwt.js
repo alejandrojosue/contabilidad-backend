@@ -1,18 +1,18 @@
 import jwt from 'jsonwebtoken'
+import { promisify } from 'util'
+
+const signAsync = promisify(jwt.sign)
+
 const generarJWT = async (uid = '') => {
-  return new Promise((resolve, reject) => {
-    const payload = { uid }
-    jwt.sign(payload, process.env.SECRETEORPRIVATEKEY, {
-      expiresIn: '4h' /* Tiempo que dura esto */
-    }, (err, token) => {
-      if (err) {
-        console.error(err)
-        reject(new Error('No se pudo generar el Token'))
-      } else {
-        resolve(token)
-      }
-    })
-  })
+  const payload = { uid }
+
+  try {
+    const token = await signAsync(payload, process.env.JWT_SECRET, { expiresIn: '4h' })
+    return token
+  } catch (err) {
+    console.error(err)
+    throw new Error('No se pudo generar el Token')
+  }
 }
 
 export {
