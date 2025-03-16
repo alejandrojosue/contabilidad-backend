@@ -9,6 +9,7 @@ import authRoutes from '../routes/auth.js'
 import { corsErrorMiddleware } from '../middlewares/error-cors.js'
 import { validateDBConnection } from '../middlewares/validate-db-connection.js'
 import { notFoundMiddleware } from '../middlewares/not-found.js'
+import { verifyToken } from '../middlewares/verify-jwt.js'
 
 export default class Server {
   constructor () {
@@ -51,7 +52,7 @@ export default class Server {
   routes () {
     this.app.use(this.paths.users, userRoutes)
     this.app.use(this.paths.auth, authRoutes)
-    this.app.use(this.paths.auditing, auditingRoutes)
+    this.app.use(this.paths.auditing, verifyToken, auditingRoutes)
   }
 
   listen () {

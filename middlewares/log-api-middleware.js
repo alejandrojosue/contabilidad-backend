@@ -2,7 +2,20 @@ import { processAPI, processAPIDetails } from '../helpers/api_call.js'
 import { errorMessages } from '../helpers/error-messages.js'
 export const logApiMiddleware = (handler) => {
   return async (req, res, next) => {
-    const { user = 0, origin = '192.131.41.4', channel = 'W', uType = 'USER' } = req.body
+    const info = req.info?.uid
+    let user, origin, channel, uType
+    if (info) {
+      user = info.user
+      origin = info.origin
+      channel = info.channel
+      uType = info.uType
+    } else {
+      const body = req.body
+      user = body.user
+      origin = body.origin
+      channel = body.channel
+      uType = body.uType
+    }
 
     // Registrar inicio de la API
     const ref = await processAPI({

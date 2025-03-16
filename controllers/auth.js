@@ -7,7 +7,7 @@ import { sendConfirmationEmail, sendRecoveryPassEmail } from '../helpers/send-em
 import { API_SALT } from '../config/admin.js'
 
 export const login = logApiMiddleware(async (req = request, res = response) => {
-  const { identifier, password } = req.body
+  const { identifier, password, user: uid = 0, origin = '192.131.41.4', channel = 'W', uType = 'USER' } = req.body
 
   try {
     const result = await pool.query('SELECT public.get_user_credentials($1) AS user', [identifier])
@@ -23,7 +23,9 @@ export const login = logApiMiddleware(async (req = request, res = response) => {
 
     // eslint-disable-next-line
     if (!isMatch) { throw { status: 401, code: 'USR01' } }
-    const jwt = await generate({ identifier, password, username })
+    const jwt = await generate({ identifier, password, username, user: uid, origin, channel, uType })
+    // eslint-disable-next-line
+    if (!jwt) throw { status: 500, code: 500, message: 'Error al generar jwt' }
 
     res.locals.trm1 = ['RE', 'DA']
     res.locals.trm2 = ['0000']
@@ -84,7 +86,7 @@ export const forgotPassword = logApiMiddleware(async (req = request, res = respo
   try {
     const jwt = await generate(`${email}`)
     // eslint-disable-next-line
-    if (!jwt) throw { status: 500, code: 500, message: 'Error al generar jwrt' }
+    if (!jwt) throw { status: 500, code: 500, message: 'Error al generar jwt' }
 
     const result = await pool.query('SELECT * from public.forgot_user($1,$2)', [email, jwt])
     const userId = result?.rows[0]?.userid
