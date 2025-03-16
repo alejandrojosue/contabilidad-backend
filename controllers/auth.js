@@ -3,7 +3,8 @@ import { pool } from '../database/config.js'
 import bcryptjs from 'bcryptjs'
 import { request, response } from 'express'
 import { decodeToken, generate } from '../helpers/jwt-generate.js'
-import { sendConfirmationEmail } from '../helpers/send-email.js'
+import { sendConfirmationEmail, sendRecoveryPassEmail } from '../helpers/send-email.js'
+import { API_SALT } from '../config/admin.js'
 
 export const login = logApiMiddleware(async (req = request, res = response) => {
   const { identifier, password } = req.body
@@ -22,6 +23,8 @@ export const login = logApiMiddleware(async (req = request, res = response) => {
 
     // eslint-disable-next-line
     if (!isMatch) { throw { status: 401, code: 'USR01' } }
+    const jwt = await generate({ identifier, password, username })
+
     res.locals.trm1 = ['RE', 'DA']
     res.locals.trm2 = ['0000']
     res.locals.trm3 = ['', `${user}|${identifier}|${username}`]
@@ -29,7 +32,8 @@ export const login = logApiMiddleware(async (req = request, res = response) => {
     res.json({
       id: user,
       email: identifier,
-      username
+      username,
+      jwt
     })
   } catch (error) {
   // eslint-disable-next-line
@@ -40,9 +44,12 @@ export const login = logApiMiddleware(async (req = request, res = response) => {
 export const register = logApiMiddleware(async (req = request, res = response) => {
   const { username, email, password, idRol, idUserCreator = 1, uType = 'ADMIN' } = req.body
   try {
-    const salt = await bcryptjs.genSalt(process.env.API_SALT)
+    const salt = await bcryptjs.genSalt(API_SALT)
     const hashedPassword = await bcryptjs.hash(password, salt)
     const jwt = await generate(`${email}|${username}`)
+
+    // eslint-disable-next-line
+    if (!jwt) throw { status: 500, code: 500, message: 'Error al generar jwt' }
 
     const result = await pool.query('SELECT * from public.register_user($1,$2,$3,$4,$5,$6,$7)', [username, email, hashedPassword, jwt, idRol, idUserCreator, uType])
     const userId = result?.rows[0]?.userid
@@ -72,12 +79,31 @@ export const register = logApiMiddleware(async (req = request, res = response) =
   }
 })
 
-export const logout = logApiMiddleware(async (req = request, res = response) => {
-
-})
-
 export const forgotPassword = logApiMiddleware(async (req = request, res = response) => {
+  const { email } = req.body
+  try {
+    const jwt = await generate(`${email}`)
+    // eslint-disable-next-line
+    if (!jwt) throw { status: 500, code: 500, message: 'Error al generar jwrt' }
 
+    const result = await pool.query('SELECT * from public.forgot_user($1,$2)', [email, jwt])
+    const userId = result?.rows[0]?.userid
+    const errorCode = result?.rows[0]?.errorcode
+
+    // eslint-disable-next-line
+    if (errorCode !== '0000') throw { status: 400, code: errorCode}
+
+    res.locals.trm1 = ['RE', 'DA']
+    res.locals.trm2 = ['0000', `${userId}|${email}`]
+    await sendRecoveryPassEmail(email, jwt)
+    res.status(200).json({
+      id: userId,
+      email
+    })
+  } catch (error) {
+    // eslint-disable-next-line
+    throw { status: error.status ?? 500, code: error.code, message: error.message }
+  }
 })
 
 export const confirmation = logApiMiddleware(async (req = request, res = response) => {
@@ -93,6 +119,35 @@ export const confirmation = logApiMiddleware(async (req = request, res = respons
     if (!userId) throw { status: 400, code: errorCode }
     res.locals.trm1 = ['RE', 'DA']
     res.locals.trm2 = ['0000', `${userId}|${email}`]
+    res.status(200).json({
+      id: userId,
+      email
+    })
+  } catch (error) {
+    // eslint-disable-next-line
+    throw { status: error.status ?? 500, code: error.code, message: error.message }
+  }
+})
+
+export const passwordReset = logApiMiddleware(async (req = request, res = response) => {
+  const { email, password } = req.body
+  try {
+    const salt = await bcryptjs.genSalt(API_SALT)
+    const hashedPassword = await bcryptjs.hash(password, salt)
+    const jwt = await generate(`${email}|${password}`)
+
+    // eslint-disable-next-line
+    if (!jwt) throw { status: 500, code: 500, message: 'Error al generar jwt' }
+
+    const result = await pool.query('SELECT * from public.reset_pass_user($1,$2)', [email, hashedPassword])
+    const userId = result?.rows[0]?.userid
+    const errorCode = result?.rows[0]?.errorcode
+
+    // eslint-disable-next-line
+    if (errorCode !== '0000') throw { status: 400, code: errorCode}
+
+    res.locals.trm1 = ['RE', 'DA']
+    res.locals.trm2 = ['0000', `${userId}|${email}|`]
     res.status(200).json({
       id: userId,
       email
