@@ -2,6 +2,8 @@ import { logApiMiddleware } from '../middlewares/log-api-middleware.js'
 import { pool } from '../database/config.js'
 import bcryptjs from 'bcryptjs'
 import { request, response } from 'express'
+import { generate } from '../helpers/jwt-generate.js'
+import { sendConfirmationEmail } from '../helpers/send-email.js'
 
 export const login = logApiMiddleware(async (req = request, res = response) => {
   const { identifier, password } = req.body
@@ -38,9 +40,11 @@ export const login = logApiMiddleware(async (req = request, res = response) => {
 export const register = logApiMiddleware(async (req = request, res = response) => {
   const { username, email, password, idRol, idUserCreator = 1, uType = 'ADMIN' } = req.body
   try {
-    const salt = await bcryptjs.genSalt(process.env.API_SALT) // Generar un "salt" (factor de coste de encriptación)
+    const salt = await bcryptjs.genSalt(process.env.API_SALT)
     const hashedPassword = await bcryptjs.hash(password, salt)
-    const result = await pool.query('SELECT * from public.register_user($1,$2,$3,$4,$5,$6)', [username, email, hashedPassword, idRol, idUserCreator, uType])
+    const jwt = await generate(`${email}|${username}`)
+
+    const result = await pool.query('SELECT * from public.register_user($1,$2,$3,$4,$5,$6,$7)', [username, email, hashedPassword, jwt, idRol, idUserCreator, uType])
     const userId = result?.rows[0]?.userid
     const errorCode = result?.rows[0]?.errorcode
     const suggestedUsername = result?.rows[0]?.suggestedusername
@@ -57,7 +61,7 @@ export const register = logApiMiddleware(async (req = request, res = response) =
     res.locals.trm1 = ['RE', 'DA']
     res.locals.trm2 = ['0000']
     res.locals.trm3 = ['', `${userId}|${email}|${username}`]
-
+    await sendConfirmationEmail(username, email, jwt)
     res.status(201).json({
       id: userId,
       email,
