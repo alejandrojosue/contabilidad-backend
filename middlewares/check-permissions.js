@@ -21,8 +21,7 @@ export const checkPermissions = async (req, res, next) => {
     `
     const action = `API::${originalUrl}::${method}`
     const values = [role, action]
-    let { rowCount } = await pool.query(query, values)
-    rowCount = 1
+    const { rowCount } = await pool.query(query, values)
     if (rowCount === 0) {
       return res.status(403).json({
         error: {
