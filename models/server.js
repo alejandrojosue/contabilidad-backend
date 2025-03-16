@@ -6,7 +6,6 @@ import { CORS_OPTIONS } from '../config/cors.js'
 import userRoutes from '../routes/user.js'
 import auditingRoutes from '../routes/auditing.js'
 import authRoutes from '../routes/auth.js'
-import { connectDB } from '../database/config.js'
 import { corsErrorMiddleware } from '../middlewares/error-cors.js'
 import { validateDBConnection } from '../middlewares/validate-db-connection.js'
 import { notFoundMiddleware } from '../middlewares/not-found.js'
@@ -28,8 +27,6 @@ export default class Server {
 
     // Middleware para rutas no encontradas (404)
     this.app.use(notFoundMiddleware)
-
-    this.database()
   }
 
   middlewares () {
@@ -55,10 +52,6 @@ export default class Server {
     this.app.use(this.paths.users, userRoutes)
     this.app.use(this.paths.auth, authRoutes)
     this.app.use(this.paths.auditing, auditingRoutes)
-  }
-
-  async database () {
-    return await connectDB()
   }
 
   listen () {
