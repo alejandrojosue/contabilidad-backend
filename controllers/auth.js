@@ -14,8 +14,8 @@ export const login = logApiMiddleware(async (req = request, res = response) => {
     const user = result?.rows[0]?.user?.split(',')[0].replace('(', '')
     const pass = result?.rows[0]?.user?.split(',')[1]
     const username = result?.rows[0]?.user?.split(',')[2]
-    const errorCode = result?.rows[0]?.user?.split(',')[3].replace(')', '')
-
+    const role = result?.rows[0]?.user?.split(',')[3]
+    const errorCode = result?.rows[0]?.user?.split(',')[4].replace(')', '')
     // eslint-disable-next-line
     if (errorCode !== '0000') { throw { status: 401, code: errorCode } }
 
@@ -23,13 +23,13 @@ export const login = logApiMiddleware(async (req = request, res = response) => {
 
     // eslint-disable-next-line
     if (!isMatch) { throw { status: 401, code: 'USR01' } }
-    const jwt = await generate({ identifier, password, username, user: uid, origin, channel, uType })
+    const jwt = await generate({ identifier, password, role, user: uid, origin, channel, uType })
     // eslint-disable-next-line
     if (!jwt) throw { status: 500, code: 500, message: 'Error al generar jwt' }
 
     res.locals.trm1 = ['RE', 'DA']
     res.locals.trm2 = ['0000']
-    res.locals.trm3 = ['', `${user}|${identifier}|${username}`]
+    res.locals.trm3 = ['', `${user}|${identifier}|${username}|${role}`]
 
     res.json({
       id: user,

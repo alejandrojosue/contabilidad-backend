@@ -3,7 +3,7 @@ import { pool } from '../database/config.js'
 import { request, response } from 'express'
 import { REST } from '../config/api.js'
 
-export const post = logApiMiddleware(async (req = request, res = response) => {
+export const get = logApiMiddleware(async (req = request, res = response) => {
   const { limit = REST.defaultLimit, from = 100 } = req.query
 
   try {
