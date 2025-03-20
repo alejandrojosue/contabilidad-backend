@@ -4,7 +4,6 @@ export const checkPermissions = async (req, res, next) => {
   try {
     const role = req.info?.uid?.role // Obtiene el role del usuario autenticado
     const { method, originalUrl } = req // Método HTTP y endpont
-
     if (!role) {
       return res.status(403).json({
         error: {

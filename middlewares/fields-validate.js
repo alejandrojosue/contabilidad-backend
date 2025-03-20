@@ -1,9 +1,8 @@
 import { validationResult } from 'express-validator'
 import { processAPIDetails, processAPI } from '../helpers/api_call.js'
-
-export const fieldsValidate = (req, res, next) => {
+import { request, response } from 'express'
+export const fieldsValidate = (req = request, res = response, next) => {
   const errors = validationResult(req)
-
   if (!errors.isEmpty()) {
     const { user, origin, channel, uType } = req.body
     processAPI({
