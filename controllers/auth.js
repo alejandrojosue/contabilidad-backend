@@ -109,9 +109,9 @@ export const forgotPassword = logApiMiddleware(async (req = request, res = respo
 
 export const confirmation = logApiMiddleware(async (req = request, res = response) => {
   const { token } = req.body
-  const { uid } = decodeToken(token)
+  const decoded = decodeToken(token)
   try {
-    const email = uid.split('|')[0]
+    const email = decoded?.uid.split('|')[0]
     const result = await pool.query('select * from public.confirm_user($1,$2)', [email, token])
     const userId = result?.rows[0]?.userid
     const errorCode = result?.rows[0]?.errorcode
