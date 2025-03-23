@@ -7,7 +7,7 @@ import { sendConfirmationEmail, sendRecoveryPassEmail } from '../helpers/send-em
 import { API_SALT } from '../config/admin.js'
 
 export const login = logApiMiddleware(async (req = request, res = response) => {
-  const { identifier, password, user: uid = 0, origin = '192.131.41.4', channel = 'W', uType = 'USER' } = req.body
+  const { identifier, password, origin = '192.131.41.4', channel = 'W', uType = 'USER' } = req.body
   try {
     const result = await pool.query('SELECT public.get_user_credentials($1) AS user', [identifier])
     const user = result?.rows[0]?.user?.split(',')[0].replace('(', '')
@@ -22,7 +22,7 @@ export const login = logApiMiddleware(async (req = request, res = response) => {
     const isMatch = await bcryptjs.compare(password, pass)
     // eslint-disable-next-line
     if (!isMatch) { throw { status: 401, code: 'USR01' } }
-    const jwt = await generate({ identifier, password, role, user: uid, origin, channel, uType })
+    const jwt = await generate({ identifier, password, role, user, origin, channel, uType })
     // eslint-disable-next-line
     if (!jwt) throw { status: 500, code: 500, message: 'Error al generar jwt' }
 

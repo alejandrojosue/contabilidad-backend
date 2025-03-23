@@ -6,6 +6,7 @@ import { CORS_OPTIONS } from '../config/cors.js'
 import userRoutes from '../routes/user.js'
 import auditingRoutes from '../routes/auditing.js'
 import authRoutes from '../routes/auth.js'
+import customerRoutes from '../routes/customer.js'
 
 import {
   corsErrorMiddleware, validateDBConnection,
@@ -19,6 +20,7 @@ export default class Server {
     this.paths = {
       auth: '/api/auth',
       users: '/api/users',
+      customers: '/api/customers',
       companies: '/api/companies',
       auditing: '/api/auditing'
     }
@@ -51,8 +53,9 @@ export default class Server {
   }
 
   routes () {
-    this.app.use(this.paths.users, userRoutes)
     this.app.use(this.paths.auth, authRoutes)
+    this.app.use(this.paths.users, verifyToken, checkPermissions, userRoutes)
+    this.app.use(this.paths.customers, verifyToken, checkPermissions, customerRoutes)
     this.app.use(this.paths.auditing, verifyToken, checkPermissions, auditingRoutes)
   }
 

@@ -18,7 +18,7 @@ export const checkPermissions = async (req, res, next) => {
       WHERE role_id = $1 AND action = $2
       LIMIT 1
     `
-    const action = `API::${originalUrl}::${method}`
+    const action = `API::${originalUrl.split('?')[0]}::${method}`
     const values = [role, action]
     const { rowCount } = await pool.query(query, values)
     if (rowCount === 0) {

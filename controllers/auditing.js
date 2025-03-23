@@ -4,7 +4,7 @@ import { request, response } from 'express'
 import { REST } from '../config/api.js'
 
 export const get = logApiMiddleware(async (req = request, res = response) => {
-  const { limit = REST.defaultLimit, from = 100 } = req.query
+  const { limit = REST.defaultLimit, from = 1 } = req.query
 
   try {
     const result = await pool.query(
