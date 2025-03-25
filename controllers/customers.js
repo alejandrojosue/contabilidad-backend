@@ -7,7 +7,7 @@ export const getCustomerByUser = logApiMiddleware(async (req = request, res = re
   const { limit = REST.defaultLimit, from = 1 } = req.query
   const info = req.info?.uid
   const identifier = info?.identifier ?? ''
-  const user = info?.user ?? ''
+  const user = info?.user ?? 0
 
   try {
     const result = await pool.query(

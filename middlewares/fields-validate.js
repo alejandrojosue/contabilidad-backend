@@ -4,7 +4,20 @@ import { request, response } from 'express'
 export const fieldsValidate = (req = request, res = response, next) => {
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
-    const { user, origin, channel, uType } = req.body
+    const info = req.info?.uid
+    let user, origin, channel, uType
+    if (info) {
+      user = info.user
+      origin = info.origin
+      channel = info.channel
+      uType = info.uType
+    } else {
+      const body = req.body
+      user = body.user
+      origin = body.origin
+      channel = body.channel
+      uType = body.uType
+    }
     processAPI({
       chn: channel,
       origin,

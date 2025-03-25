@@ -7,6 +7,9 @@ import userRoutes from '../routes/user.js'
 import auditingRoutes from '../routes/auditing.js'
 import authRoutes from '../routes/auth.js'
 import customerRoutes from '../routes/customer.js'
+import companiesRotes from '../routes/company.js'
+import apiCallsRoutes from '../routes/apiCall.js'
+import errorMesseagesRoutes from '../routes/errorMessage.js'
 
 import {
   corsErrorMiddleware, validateDBConnection,
@@ -18,11 +21,11 @@ export default class Server {
     this.app = express()
     this.port = process.env.PORT
     this.paths = {
+      auditing: '/api/auditing',
       auth: '/api/auth',
-      users: '/api/users',
-      customers: '/api/customers',
       companies: '/api/companies',
-      auditing: '/api/auditing'
+      customers: '/api/customers',
+      users: '/api/users'
     }
 
     this.middlewares()
@@ -53,10 +56,13 @@ export default class Server {
   }
 
   routes () {
-    this.app.use(this.paths.auth, authRoutes)
-    this.app.use(this.paths.users, verifyToken, checkPermissions, userRoutes)
-    this.app.use(this.paths.customers, verifyToken, checkPermissions, customerRoutes)
     this.app.use(this.paths.auditing, verifyToken, checkPermissions, auditingRoutes)
+    this.app.use('/api/api-calls', apiCallsRoutes)
+    this.app.use(this.paths.auth, authRoutes)
+    this.app.use(this.paths.companies, verifyToken, checkPermissions, companiesRotes)
+    this.app.use(this.paths.customers, verifyToken, checkPermissions, customerRoutes)
+    this.app.use('/api/error-messages', errorMesseagesRoutes)
+    this.app.use(this.paths.users, verifyToken, checkPermissions, userRoutes)
   }
 
   listen () {

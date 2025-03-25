@@ -59,17 +59,13 @@ DROP TABLE IF EXISTS public.branches CASCADE;
 -- Eliminar la tabla companies (empresas)
 DROP TABLE IF EXISTS public.companies CASCADE;
 
+DROP VIEW IF EXISTS view_customers_by_user;
 
 
 DROP INDEX IF EXISTS idx_created_at_accounting_entries;
 
 -- Eliminar índice de la tabla companies
 DROP INDEX IF EXISTS idx_companies_rtn;
-
--- Eliminar índices de la tabla companies_users
-DROP INDEX IF EXISTS idx_companies_users_company_rtn;
-DROP INDEX IF EXISTS idx_companies_users_user_id;
-
    
 DROP TABLE IF EXISTS public.payment_plans CASCADE;
 
@@ -96,6 +92,13 @@ DROP INDEX IF EXISTS idx_full_name;
 -- Eliminar la tabla customer_companies
 DROP TABLE IF EXISTS public.customer_companies CASCADE;
 
+DROP FUNCTION IF EXISTS insert_company(
+    INTEGER, CHAR(14), VARCHAR(255), TEXT, VARCHAR(255), TEXT[], VARCHAR(255), INT
+);
+
+DROP FUNCTION IF EXISTS update_company(
+    INTEGER, CHAR(14), VARCHAR(255), TEXT, VARCHAR(255), TEXT[], VARCHAR(255), INT
+);
 
 
 -- Eliminar índices para la tabla 'invoices'
@@ -252,7 +255,10 @@ CREATE TABLE public.up_permissions (
     updated_by_user_id INTEGER, -- id del usuario que actualizó el registro
     user_type VARCHAR(10) CHECK (user_type IN ('ADMIN', 'USER')) -- Tipo de usuario
 );
---select * from up_permissions;
+
+CREATE OR REPLACE VIEW public.VUPRM AS
+SELECT action, properties, conditions, role_id as role from up_permissions;
+
 -- Crear la tabla de usuarios
 CREATE TABLE public.up_users (
     id SERIAL PRIMARY KEY,
@@ -761,7 +767,7 @@ CREATE INDEX idx_products_code_name ON public.products (code, name);
     updated_by_user_id INTEGER, -- id del usuario que actualizó el registro
     user_type VARCHAR(10) CHECK (user_type IN ('ADMIN', 'USER')) -- Tipo de usuario
 );
-   
+   drop table companies;
 CREATE TABLE public.companies (
     rtn CHAR(14) PRIMARY KEY, -- RTN como clave primaria
     name VARCHAR(255) NOT NULL,
@@ -776,17 +782,10 @@ CREATE TABLE public.companies (
     created_by_user_id INTEGER, -- id del usuario que creó el registro
     updated_by_user_id INTEGER, -- id del usuario que actualizó el registro
     user_type VARCHAR(10) CHECK (user_type IN ('ADMIN', 'USER')), -- Tipo de usuario
-    FOREIGN KEY (plan_id) REFERENCES public.payment_plans(id) -- Relación con la tabla de planes de pago
+    FOREIGN KEY (plan_id) REFERENCES public.payment_plans(id), -- Relación con la tabla de planes de pago
+    FOREIGN KEY (created_by_user_id) REFERENCES public.up_users(id), -- Relación con la tabla de usuarios
 );
 
-
-CREATE TABLE public.companies_users (
-    company_rtn VARCHAR(14) NOT NULL,
-    user_id INTEGER NOT NULL,
-    PRIMARY KEY (company_rtn, user_id),
-    FOREIGN KEY (company_rtn) REFERENCES public.companies(rtn) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES public.up_users(id) ON DELETE CASCADE
-);
 
 CREATE TABLE public.branches (
     id SERIAL PRIMARY KEY,  -- Identificador único para cada sucursal
@@ -805,6 +804,120 @@ CREATE TABLE public.branches (
     FOREIGN KEY (company_rtn) REFERENCES public.companies(rtn) ON DELETE CASCADE  -- Relación con la empresa
 );
 
+
+CREATE OR REPLACE FUNCTION insert_company(
+    p_user_id INTEGER,
+    p_rtn CHAR(14),
+    p_name VARCHAR(255),
+    p_address TEXT,
+    p_email VARCHAR(255),
+    p_phones TEXT[],
+    p_owner_name VARCHAR(255),
+    p_plan_id INT
+) RETURNS TABLE (userId INTEGER,errorCode VARCHAR(5)) AS $$
+DECLARE
+    v_exists BOOLEAN;
+    v_plan_exists BOOLEAN;
+    v_user_exists BOOLEAN;
+BEGIN
+    -- Verificar si la empresa ya existe con ese RTN
+    SELECT EXISTS(SELECT 1 FROM public.companies WHERE rtn = p_rtn) INTO v_exists;
+    IF v_exists THEN
+        RETURN QUERY SELECT p_user_id, 'COM01'::VARCHAR(5);
+	ELSE
+		-- Verificar si el plan_id existe
+	    SELECT EXISTS(SELECT 1 FROM public.payment_plans WHERE id = p_plan_id) INTO v_plan_exists;
+	    IF NOT v_plan_exists THEN
+	        RETURN QUERY SELECT p_user_id, 'PLA01'::VARCHAR(5);
+		ELSE
+			-- Verificar si el user_id existe
+		    SELECT EXISTS(SELECT 1 FROM public.up_users WHERE id = p_user_id) INTO v_user_exists;
+		    IF NOT v_user_exists THEN
+		        RETURN QUERY SELECT p_user_id, 'USR10'::VARCHAR(5);
+			ELSE
+				-- Verificar si el usuario existe en companies
+			    SELECT EXISTS(SELECT 1 FROM public.companies WHERE created_by_user_id = p_user_id) INTO v_user_exists;
+			    IF v_user_exists THEN
+			        RETURN QUERY SELECT p_user_id, 'COM02'::VARCHAR(5);
+				ELSE
+					-- Insertar la nueva empresa
+				    INSERT INTO public.companies (rtn, name, address, email, phones, owner_name, plan_id, created_by_user_id, updated_by_user_id)
+				    VALUES (p_rtn, p_name, p_address, p_email, p_phones, p_owner_name, p_plan_id, p_user_id, p_user_id);
+				
+				    -- Devolver la empresa creada sin los campos excluidos
+				    RETURN QUERY SELECT p_user_id, '0000'::VARCHAR(5);
+		    	END IF;
+		    END IF;
+	    END IF;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION update_company(
+    p_user_id INTEGER,
+    p_rtn CHAR(14),
+    p_name VARCHAR(255),
+    p_address TEXT,
+    p_email VARCHAR(255),
+    p_phones TEXT[],
+    p_owner_name VARCHAR(255),
+    p_plan_id INT
+) RETURNS TABLE (userId INTEGER,errorCode VARCHAR(5)) AS $$
+DECLARE
+    v_exists BOOLEAN;
+    v_plan_exists BOOLEAN;
+    v_user_exists BOOLEAN;
+BEGIN
+    -- Verificar si la empresa ya existe con ese RTN
+    SELECT EXISTS(SELECT 1 FROM public.companies WHERE rtn = p_rtn) INTO v_exists;
+    IF NOT v_exists THEN
+        RETURN QUERY SELECT p_user_id, 'COM03'::VARCHAR(5);
+	ELSE
+		-- Verificar si el plan_id existe
+	    SELECT EXISTS(SELECT 1 FROM public.payment_plans WHERE id = p_plan_id) INTO v_plan_exists;
+	    IF NOT v_plan_exists THEN
+	        RETURN QUERY SELECT p_user_id, 'PLA01'::VARCHAR(5);
+		ELSE
+			-- Verificar si el user_id existe
+		    SELECT EXISTS(SELECT 1 FROM public.up_users WHERE id = p_user_id) INTO v_user_exists;
+		    IF NOT v_user_exists THEN
+		        RETURN QUERY SELECT p_user_id, 'USR10'::VARCHAR(5);
+			ELSE
+				-- Verificar si el usuario pertenece a la empresa
+			    SELECT EXISTS(SELECT 1 FROM public.companies WHERE created_by_user_id = p_user_id AND rtn = p_rtn) INTO v_user_exists;
+			    IF NOT v_user_exists THEN
+			        RETURN QUERY SELECT p_user_id, 'COM04'::VARCHAR(5);
+				ELSE
+					UPDATE public.companies
+					SET 
+					    name = COALESCE(p_name, name),
+					    address = COALESCE(p_address, address),
+					    email = COALESCE(p_email, email),
+					    phones = CASE 
+					                WHEN p_phones IS NULL OR p_phones = '{}' THEN phones
+					                ELSE p_phones
+					             END,
+					    owner_name = COALESCE(p_owner_name, owner_name),
+					    plan_id = COALESCE(p_plan_id, plan_id),
+					    updated_by_user_id = p_user_id
+					WHERE rtn = p_rtn AND created_by_user_id = p_user_id;
+
+				    -- Devolver la empresa creada sin los campos excluidos
+				    RETURN QUERY SELECT p_user_id, '0000'::VARCHAR(5);
+		    	END IF;
+		    END IF;
+	    END IF;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+
+
+
 -- Crear índice para la relación entre la sucursal y la empresa (basado en el RTN)
 CREATE INDEX idx_company_rtn_branches ON public.branches (company_rtn);
 
@@ -815,10 +928,6 @@ CREATE INDEX idx_is_active ON public.branches (is_active);
 
 -- Índice para la tabla companies por RTN
 CREATE INDEX idx_companies_rtn ON public.companies(rtn);
-
--- Índice para la tabla companies_users por company_rtn y user_id
-CREATE INDEX idx_companies_users_company_rtn ON public.companies_users(company_rtn);
-CREATE INDEX idx_companies_users_user_id ON public.companies_users(user_id);
 
    
 
@@ -893,6 +1002,29 @@ CREATE INDEX idx_customer_id_company_rtn ON public.customer_companies(customer_i
 
 -- Índice para 'created_at' (si es necesario buscar por fecha de creación)
 CREATE INDEX idx_created_at_customer_companies ON public.customer_companies(created_at);
+
+
+create or REPLACE VIEW public.view_customers_by_user AS
+SELECT 
+    cu.id,
+    cu.rtn AS customer_rtn,
+    cu.full_name AS customer_name,
+    cu.address AS customer_address,
+    cu.phones AS customer_phones,
+    cu.additional_data AS customer_additional_data,
+    cu.created_at AS customer_created_at,
+    cu.updated_at AS customer_updated_at,
+    u.id AS user_id
+FROM public.customers cu
+JOIN public.customer_companies cc ON cu.id = cc.customer_id
+JOIN public.companies co ON cc.company_rtn = co.rtn
+JOIN public.companies_users cuu ON co.rtn = cuu.company_rtn
+JOIN public.up_users u ON cuu.user_id = u.id;
+
+
+
+
+
 
 
 -- Modificar la tabla de facturas para quitar el campo 'client_rtn' y agregar la relación con 'customer_companies'
@@ -1543,8 +1675,6 @@ $$ LANGUAGE plpgsql;
 --
 --
 --
---INSERT INTO public.up_users (username, email, password, confirmed, blocked, user_type)
---VALUES ('nuevo_usuario2', 'user2@user.com', '', FALSE, FALSE, 'ADMIN');
 --
 --
 --
@@ -1592,9 +1722,9 @@ VALUES
 --('api::users.users.list', 'up_users', '{}', '{}', 1, NOW(), NOW(), 1, 1, 'USER');
 --
 ---- Acción para exportar (export) registros de la tabla up_users
---INSERT INTO public.up_permissions (action, subject, properties, conditions, role_id, created_at, updated_at, created_by_user_id, updated_by_user_id, user_type)
---VALUES
---('api::users.users.export', 'up_users', '{"format": "csv"}', '{}', 1, NOW(), NOW(), 1, 1, 'USER');
+INSERT INTO public.up_permissions (action, subject, properties, conditions, role_id, created_at, updated_at, created_by_user_id, updated_by_user_id, user_type)
+VALUES
+('api::/api/auditing::GET', 'auditing', '{"format": "csv"}', '{}', 1, NOW(), NOW(), 1, 1, 'USER');
 --
 --
 --INSERT INTO public.categories (name, description, created_at, updated_at, created_by_user_id, updated_by_user_id, user_type)
@@ -1636,12 +1766,12 @@ VALUES
 --
 --   
 --   
---   INSERT INTO public.payment_plans (name, price, included_items, created_at, updated_at, created_by_user_id, updated_by_user_id, user_type)
---VALUES
---    ('Plan Developer', 15.00, ARRAY['1 seat', '1 GB storage', '1 GB bandwidth'], NOW(), NOW(), 1, 1, 'ADMIN'),
---    ('Plan Pro', 99.00, ARRAY['5 seats', '5 GB storage', '5 GB bandwidth'], NOW(), NOW(), 2, 2, 'USER'),
---    ('Plan Team', 499.00, ARRAY['10 seats', '20 GB storage', '20 GB bandwidth'], NOW(), NOW(), 3, 3, 'ADMIN');
---
+   INSERT INTO public.payment_plans (name, price, included_items, created_at, updated_at, created_by_user_id, updated_by_user_id, user_type)
+VALUES
+    ('Plan Developer', 15.00, ARRAY['1 seat', '1 GB storage', '1 GB bandwidth'], NOW(), NOW(), 1, 1, 'ADMIN'),
+    ('Plan Pro', 99.00, ARRAY['5 seats', '5 GB storage', '5 GB bandwidth'], NOW(), NOW(), 2, 2, 'USER'),
+    ('Plan Team', 499.00, ARRAY['10 seats', '20 GB storage', '20 GB bandwidth'], NOW(), NOW(), 3, 3, 'ADMIN');
+
 --   
 --
 ---- Insertar clientes (customers) con datos de ejemplo
@@ -1892,6 +2022,58 @@ INSERT INTO public.error_messages (error_code, error_message, created_at, update
 VALUES
 ('USR02', 'El usuario está bloqueado', NOW(), NOW(), 0, 0, 'ADMIN'),
 ('USR03', 'El usuario no está confirmado aún', NOW(), NOW(), 0, 0, 'ADMIN');
+
+INSERT INTO public.error_messages (error_code, error_message, created_at, updated_at, created_by_user_id, updated_by_user_id, user_type)
+VALUES
+('USR09', 'El enlace de confirmación no es válido o ha expirado.', NOW(), NOW(), 0, 0, 'ADMIN');
+
+
+INSERT INTO public.error_messages (error_code, error_message, created_at, updated_at, created_by_user_id, updated_by_user_id, user_type)
+VALUES
+('COM01', 'El RTN ya está siendo utilizado por otra empresa.', NOW(), NOW(), 0, 0, 'ADMIN'),
+('USR10', 'El usuario no existe.', NOW(), NOW(), 0, 0, 'ADMIN'),
+('PLA01', 'Plan inválido.', NOW(), NOW(), 0, 0, 'ADMIN');
+
+
+INSERT INTO public.error_messages (error_code, error_message, created_at, updated_at, created_by_user_id, updated_by_user_id, user_type)
+VALUES
+('COM02', 'El usuario ya tiene asignada una empresa.', NOW(), NOW(), 0, 0, 'ADMIN');
+
+INSERT INTO public.error_messages (error_code, error_message, created_at, updated_at, created_by_user_id, updated_by_user_id, user_type)
+VALUES
+('COM03', 'La empresa no existe.', NOW(), NOW(), 0, 0, 'ADMIN'),
+('COM04', 'El usuario no válido.', NOW(), NOW(), 0, 0, 'ADMIN');
+
+INSERT INTO public.up_permissions (
+    action, 
+    role_id, 
+    created_by_user_id, 
+    updated_by_user_id, 
+    user_type
+) 
+VALUES (
+    'API::/api/users/permissions-all::GET', 
+    1, 
+    1,  -- Suponiendo que el id del usuario que crea y actualiza es 1
+    1,  -- Suponiendo que el id del usuario que crea y actualiza es 1
+    'ADMIN'  -- Asumiendo que el tipo de usuario es 'ADMIN'
+);
+
+INSERT INTO public.up_permissions (
+    action, 
+    role_id, 
+    created_by_user_id, 
+    updated_by_user_id, 
+    user_type
+) 
+VALUES (
+    'API::/api/customers::GET', 
+    1, 
+    1,  -- Suponiendo que el id del usuario que crea y actualiza es 1
+    1,  -- Suponiendo que el id del usuario que crea y actualiza es 1
+    'ADMIN'  -- Asumiendo que el tipo de usuario es 'ADMIN'
+);
+
 
 
 --
@@ -2154,108 +2336,3 @@ VALUES
 --
 --
 --
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
---
---
---
---
---
---
---
---
---
---
---
---
---
---
---
---
---
---
---
---
---
-
-
-
-
-
-
-
-/*
-
-
-select * from api_call_details order by id desc;
-
-select * from up_users;
-
-select * from audit_logs;
-
-select * from up_permissions;
-
-select * from error_messages;
-*/

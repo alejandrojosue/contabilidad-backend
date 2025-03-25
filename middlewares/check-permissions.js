@@ -1,9 +1,10 @@
+import { request, response } from 'express'
 import { pool } from '../database/config.js'
 
-export const checkPermissions = async (req, res, next) => {
+export const checkPermissions = async (req = request, res = response, next) => {
   try {
     const role = req.info?.uid?.role // Obtiene el role del usuario autenticado
-    const { method, originalUrl } = req // Método HTTP y endpont
+    const { method, baseUrl } = req // Método HTTP y endpoint
     if (!role) {
       return res.status(403).json({
         error: {
@@ -18,7 +19,7 @@ export const checkPermissions = async (req, res, next) => {
       WHERE role_id = $1 AND action = $2
       LIMIT 1
     `
-    const action = `API::${originalUrl.split('?')[0]}::${method}`
+    const action = `API::${baseUrl}::${method}`
     const values = [role, action]
     const { rowCount } = await pool.query(query, values)
     if (rowCount === 0) {
