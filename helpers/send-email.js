@@ -42,14 +42,29 @@ export const sendConfirmationEmail = async (username, email, token) => {
 
 export const sendRecoveryPassEmail = async (email, token) => {
   try {
-    const confirmacionUrl = `${FRONTEND_URL}/recovery/${token}`
+    const recoveryUrl = `${FRONTEND_URL}/recovery/${token}`
 
     const mailOptions = {
       from: EMAIL_USER,
       to: email,
       subject: 'Recuperar tu cuenta',
       text: 'Haz clic en el siguiente enlace para confirmar tu cuenta:',
-      html: `<div><p>Haz clic en el siguiente enlace para confirmar tu cuenta:</p><br><a style="padding: 15px; position: absolute; left: 50%; top: 0; transform: translateX(-50%); background-color: #5dade2; color: white; text-decoration: none; border-radius: 5px;" href="${confirmacionUrl}">Recuperar</a></div>`
+      html: `
+      <div style="max-width: 600px; margin: auto; font-family: Arial, sans-serif; text-align: center; color: #333;">
+          <h2 style="color: #2c3e50;">Recuperación de contraseña</h2>
+          <p style="font-size: 16px;">Hemos recibido una solicitud para restablecer tu contraseña. Si no hiciste esta solicitud, ignora este mensaje.</p>
+          <p style="font-size: 16px;">Para restablecer tu contraseña, haz clic en el botón de abajo:</p>
+          <a href="${recoveryUrl}" 
+            style="display: inline-block; padding: 12px 20px; margin-top: 10px; background-color: #e74c3c; color: white; 
+                   text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 5px;">
+            Restablecer contraseña
+          </a>
+          <p style="font-size: 14px; margin-top: 20px;">Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:</p>
+          <p style="font-size: 12px; word-break: break-all;">${recoveryUrl}</p>
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          <p style="font-size: 12px; color: #7f8c8d;">Este enlace es válido por un tiempo limitado.</p>
+        </div>
+      `
     }
 
     await transporter.sendMail(mailOptions)

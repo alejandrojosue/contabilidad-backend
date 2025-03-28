@@ -25,4 +25,10 @@ export const decodeToken = (token) => {
 }
 
 export const decodeAndVerifyToken = (token) => {
+  return jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return null
+    }
+    return decoded
+  })
 }

@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { check } from 'express-validator'
-import { login, register, confirmation, forgotPassword, passwordReset } from '../controllers/auth.js'
+import { login, register, confirmation, forgotPassword, passwordReset, verifyTokenPasswordReset } from '../controllers/auth.js'
 import { fieldsValidate } from '../middlewares/fields-validate.js'
 const router = Router()
 
@@ -35,6 +35,13 @@ router.post('/forgot-password', [
   check('channel', 'El canal es obligatorio').not().isEmpty().isIn(['W', 'M']).withMessage('El tipo de canal debe ser W o M'),
   fieldsValidate
 ], forgotPassword)
+
+router.post('/verify-token', [
+  check('token', 'El token es obligatorio').not().isEmpty(),
+  check('ipAddress', 'El origen es obligatorio').not().isEmpty().isIP().withMessage('El origen no es válido'),
+  check('channel', 'El canal es obligatorio').not().isEmpty().isIn(['W', 'M']).withMessage('El tipo de canal debe ser W o M'),
+  fieldsValidate
+], verifyTokenPasswordReset)
 
 router.post('/password-reset', [
   check('email', 'El correo es obligatorio').not().isEmpty().isEmail().withMessage('El correo no es válido'),

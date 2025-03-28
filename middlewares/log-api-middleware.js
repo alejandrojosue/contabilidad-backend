@@ -6,13 +6,13 @@ export const logApiMiddleware = (handler) => {
     let user, origin, channel, uType
     if (info) {
       user = info.user
-      origin = info.origin
+      origin = info.ipAddress
       channel = info.channel
       uType = info.uType
     } else {
       const body = req.body
       user = body.user
-      origin = body.origin
+      origin = body.ipAddress
       channel = body.channel
       uType = body.uType
     }

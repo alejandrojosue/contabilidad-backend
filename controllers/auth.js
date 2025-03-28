@@ -2,7 +2,7 @@ import { logApiMiddleware } from '../middlewares/log-api-middleware.js'
 import { pool } from '../database/config.js'
 import bcryptjs from 'bcryptjs'
 import { request, response } from 'express'
-import { decodeToken, generate } from '../helpers/jwt-generate.js'
+import { decodeAndVerifyToken, decodeToken, generate } from '../helpers/jwt-generate.js'
 import { sendConfirmationEmail, sendRecoveryPassEmail } from '../helpers/send-email.js'
 import { API_SALT } from '../config/admin.js'
 
@@ -37,8 +37,8 @@ export const login = logApiMiddleware(async (req = request, res = response) => {
       jwt
     })
   } catch (error) {
-  // eslint-disable-next-line
-  throw { status: error.status ?? 500, code: error.code, message: error.message }
+    // eslint-disable-next-line
+    throw { status: error.status ?? 500, code: error.code, message: error.message }
   }
 })
 
@@ -58,10 +58,10 @@ export const register = logApiMiddleware(async (req = request, res = response) =
     const suggestedUsername = result?.rows[0]?.suggestedusername
 
     // eslint-disable-next-line
-    if (suggestedUsername) throw { status: 409, code: errorCode, message: `El nombre de usuario ya existe, se sugiere usar: ${suggestedUsername}`}
+    if (suggestedUsername) throw { status: 409, code: errorCode, message: `El nombre de usuario ya existe, se sugiere usar: ${suggestedUsername}` }
 
     // eslint-disable-next-line
-    if (errorCode === 'USR08') throw { status: 409, code: errorCode}
+    if (errorCode === 'USR08') throw { status: 409, code: errorCode } //El email ya está siendo utilizado por otro usuario.
 
     // eslint-disable-next-line
     if (!userId) throw { status: 409, code: errorCode }
@@ -83,16 +83,15 @@ export const register = logApiMiddleware(async (req = request, res = response) =
 export const forgotPassword = logApiMiddleware(async (req = request, res = response) => {
   const { email } = req.body
   try {
-    const jwt = await generate(`${email}`)
+    const jwt = await generate({ email })
     // eslint-disable-next-line
     if (!jwt) throw { status: 500, code: 500, message: 'Error al generar jwt' }
-
     const result = await pool.query('SELECT * from public.forgot_user($1,$2)', [email, jwt])
     const userId = result?.rows[0]?.userid
     const errorCode = result?.rows[0]?.errorcode
 
     // eslint-disable-next-line
-    if (errorCode !== '0000') throw { status: 400, code: errorCode}
+    if (errorCode !== '0000') throw { status: 400, code: errorCode }
 
     res.locals.trm1 = ['RE', 'DA']
     res.locals.trm2 = ['0000', `${userId}|${email}`]
@@ -145,10 +144,34 @@ export const passwordReset = logApiMiddleware(async (req = request, res = respon
     const errorCode = result?.rows[0]?.errorcode
 
     // eslint-disable-next-line
-    if (errorCode !== '0000') throw { status: 400, code: errorCode}
+    if (errorCode !== '0000') throw { status: 400, code: errorCode }
 
     res.locals.trm1 = ['RE', 'DA']
     res.locals.trm2 = ['0000', `${userId}|${email}|`]
+    res.status(200).json({
+      id: userId,
+      email
+    })
+  } catch (error) {
+    // eslint-disable-next-line
+    throw { status: error.status ?? 500, code: error.code, message: error.message }
+  }
+})
+
+export const verifyTokenPasswordReset = logApiMiddleware(async (req = request, res = response) => {
+  const { token } = req.body
+  const decoded = decodeAndVerifyToken(token)
+  try {
+    // eslint-disable-next-line
+    if (!decoded?.uid?.email) throw { status: 400, code: 'USR09' } //El enlace no es válido o ha expirado.
+    const result = await pool.query('select id from up_users where reset_password_token = $1', [decoded?.uid])
+    // eslint-disable-next-line
+    if (result?.rows[0]?.count === 0) throw { status: 400, code: 'USR09'} //El enlace no es válido o ha expirado.
+    const email = decoded?.uid?.email
+    const userId = result?.rows[0]?.id
+
+    res.locals.trm1 = ['RE', 'DA']
+    res.locals.trm2 = ['0000', `${email}`]
     res.status(200).json({
       id: userId,
       email
