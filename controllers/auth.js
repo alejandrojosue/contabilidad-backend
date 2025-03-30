@@ -164,17 +164,19 @@ export const verifyTokenPasswordReset = logApiMiddleware(async (req = request, r
   try {
     // eslint-disable-next-line
     if (!decoded?.uid?.email) throw { status: 400, code: 'USR09' } //El enlace no es válido o ha expirado.
-    const result = await pool.query('select id from up_users where reset_password_token = $1', [decoded?.uid])
+    const result = await pool.query('select id, username from up_users where reset_password_token = $1', [token])
     // eslint-disable-next-line
-    if (result?.rows[0]?.count === 0) throw { status: 400, code: 'USR09'} //El enlace no es válido o ha expirado.
+    if (result?.rowCount === 0) throw { status: 400, code: 'USR09'} //El enlace no es válido o ha expirado.
     const email = decoded?.uid?.email
     const userId = result?.rows[0]?.id
+    const username = result?.rows[0]?.username
 
     res.locals.trm1 = ['RE', 'DA']
     res.locals.trm2 = ['0000', `${email}`]
     res.status(200).json({
       id: userId,
-      email
+      email,
+      username
     })
   } catch (error) {
     // eslint-disable-next-line
