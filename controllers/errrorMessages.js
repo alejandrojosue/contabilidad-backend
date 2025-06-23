@@ -9,8 +9,9 @@ export const get = async (req = request, res = response) => {
     res.json({
       count: result.rowCount,
       limit: REST.defaultLimit,
-      values: result.rows.map((row) => {
+      values: result.rows.map((row, index) => {
         return {
+          id: index + 1,
           code: row.error_code,
           message: row.error_message
         }
