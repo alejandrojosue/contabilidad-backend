@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { get } from '../controllers/apiCalls.js'
+import { get } from '../controllers/apiCalls.controller.js'
 
 const router = Router()
 

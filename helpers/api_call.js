@@ -8,11 +8,17 @@ export const processAPI = async ({ chn, origin, uri, useri, uType, act }) => {
     return ref
   } catch (error) {
     console.error('Error al procesar la API:', error.message)
-    return 0
+    return {
+      rows: [{ insert_api_call: null }]
+    }
   }
 }
 
 export const processAPIDetails = async ({ ref, trm1 = '', trm2 = '', trm3 = '', trm4 = '' }) => {
+  if (!ref) {
+    console.error('Referencia de API inválida:', ref)
+    return
+  }
   try {
     await pool.query('SELECT insert_api_call_detail($1::INTEGER, $2::TEXT, $3::TEXT, $4::TEXT, $5::TEXT)',
       [ref, trm1, trm2, trm3, trm4])

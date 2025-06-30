@@ -7,7 +7,7 @@ export const verifyToken = (req, res, next) => {
   if (!token) {
     return res.status(401).json({
       error: {
-        msg: 'Acceso denegado, no se proporcionó token',
+        msg: 'Credenciales inválidas',
         details: []
       }
     })
@@ -17,7 +17,7 @@ export const verifyToken = (req, res, next) => {
     if (err) {
       return res.status(401).json({
         error: {
-          msg: 'Token inválido o expirado',
+          msg: 'Credenciales inválidas',
           details: []
         }
       })

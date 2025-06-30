@@ -2,19 +2,26 @@ import express from 'express'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import cors from 'cors'
+import xss from 'xss-clean'
 import { CORS_OPTIONS } from '../config/cors.js'
-import userRoutes from '../routes/user.js'
-import auditingRoutes from '../routes/auditing.js'
-import authRoutes from '../routes/auth.js'
-import customerRoutes from '../routes/customer.js'
-import companiesRotes from '../routes/company.js'
-import apiCallsRoutes from '../routes/apiCall.js'
-import errorMesseagesRoutes from '../routes/errorMessage.js'
+
+import {
+  apiCallsRoutes,
+  auditingRoutes,
+  authRoutes,
+  companyRoutes,
+  customerRoutes,
+  errorMessagesRoutes,
+  jobRoutes,
+  userRoutes,
+  paymentPlanRoutes
+} from '../routes/routes.js'
 
 import {
   corsErrorMiddleware, validateDBConnection,
   notFoundMiddleware, verifyToken, checkPermissions
 } from '../middlewares/index.js'
+import { setupSwagger } from '../docs/swagger.js'
 
 export default class Server {
   constructor () {
@@ -25,8 +32,12 @@ export default class Server {
       auth: '/api/auth',
       companies: '/api/companies',
       customers: '/api/customers',
-      users: '/api/users'
+      users: '/api/users',
+      paymentPlans: '/api/payment-plans'
     }
+
+    // Configuración de Swagger
+    setupSwagger(this.app)
 
     this.middlewares()
 
@@ -37,12 +48,26 @@ export default class Server {
   }
 
   middlewares () {
-    this.app.use(helmet())
+    // Seguridad y protección de cabeceras
+    this.app.use(helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          'default-src': ["'self'"],
+          'script-src': ["'self'"],
+          'style-src': ["'self'", "'unsafe-inline'"],
+          'img-src': ["'self'", 'data:'],
+          'connect-src': ["'self'"],
+          'font-src': ["'self'"]
+        }
+      }
+    }))
 
     this.app.use(morgan('[:date[clf]] :response-time ms :remote-addr :method :url :status'))
 
     // Lectura y parseo del body
     this.app.use(express.json())
+    this.app.use(xss())
 
     // Directorio público
     this.app.use(express.static('public'))
@@ -59,16 +84,19 @@ export default class Server {
     this.app.use(this.paths.auditing, verifyToken, checkPermissions, auditingRoutes)
     this.app.use('/api/api-calls', apiCallsRoutes)
     this.app.use(this.paths.auth, authRoutes)
-    this.app.use(this.paths.companies, verifyToken, checkPermissions, companiesRotes)
+    this.app.use(this.paths.companies, verifyToken, checkPermissions, companyRoutes)
     this.app.use(this.paths.customers, verifyToken, checkPermissions, customerRoutes)
-    this.app.use('/api/error-messages', errorMesseagesRoutes)
+    this.app.use('/api/error-messages', errorMessagesRoutes)
+    this.app.use('/api/job', jobRoutes)
     this.app.use(this.paths.users, verifyToken, checkPermissions, userRoutes)
+    this.app.use(this.paths.paymentPlans, paymentPlanRoutes)
   }
 
   listen () {
     console.clear()
     this.app.listen(this.port, () => {
       console.log('servidor corriendo en puerto', this.port)
+      console.log('http://localhost:' + this.port)
     })
   }
 }

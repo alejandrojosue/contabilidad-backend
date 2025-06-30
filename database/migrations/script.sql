@@ -683,9 +683,9 @@ FROM public.audit_logs order by id desc;
 
 
 
-
 -- Tabla de categorías
 CREATE TABLE public.categories (
+	id SERIAL PRIMARY KEY,
     name VARCHAR(255) PRIMARY KEY,  -- Clave primaria
     description TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
@@ -1028,25 +1028,27 @@ JOIN public.up_users u ON cuu.user_id = u.id;
 
 
 -- Modificar la tabla de facturas para quitar el campo 'client_rtn' y agregar la relación con 'customer_companies'
-CREATE TABLE public.invoices (
-    id SERIAL PRIMARY KEY,
-    invoice_number VARCHAR(50) NOT NULL,  -- Número de la factura
-    company_rtn CHAR(14) NOT NULL,  -- RTN de la empresa emisora
-    customer_id INTEGER,  -- ID del cliente (referencia a la tabla customers)
-    discount DECIMAL(10, 2) DEFAULT 0.00,  -- Descuento total de la factura
-    tax_amount DECIMAL(10, 2) DEFAULT 0.00,  -- Impuesto de la factura (15% por ejemplo)
-    status VARCHAR(20) CHECK (status IN ('PENDING', 'PAID', 'CANCELLED')) NOT NULL,  -- Estado de la factura
-    issue_date TIMESTAMP DEFAULT NOW(),  -- Fecha de emisión de la factura
-    due_date TIMESTAMP,  -- Fecha de vencimiento de la factura
-    total_amount DECIMAL(10, 2) DEFAULT 0.00,  -- Monto total de la factura (calculado por trigger)
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    created_by_user_id INTEGER NOT NULL,  -- ID del usuario que creó el registro
-    updated_by_user_id INTEGER NOT NULL,  -- ID del usuario que actualizó el registro
-    user_type VARCHAR(10) CHECK (user_type IN ('ADMIN', 'USER')) NOT NULL,  -- Tipo de usuario
-    FOREIGN KEY (company_rtn) REFERENCES public.companies(rtn) ON DELETE CASCADE,
-    FOREIGN KEY (customer_id) REFERENCES public.customers(id) ON DELETE SET NULL  -- Relación con cliente
+CREATE TABLE invoices (
+	id serial4 NOT NULL,
+	invoice_number varchar(50) NOT NULL,
+	customer_id int4 NULL,
+	discount numeric(10, 2) DEFAULT 0.00 NULL,
+	tax_amount numeric(10, 2) DEFAULT 0.00 NULL,
+	status varchar(20) NOT NULL,
+	issue_date timestamp DEFAULT now() NULL,
+	due_date timestamp NULL,
+	total_amount numeric(10, 2) DEFAULT 0.00 NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	created_by_user_id int4 NOT NULL,
+	updated_by_user_id int4 NOT NULL,
+	user_type varchar(10) NOT NULL,
+	branch_id int4 NOT NULL,
+	CONSTRAINT invoices_pkey PRIMARY KEY (id),
+	CONSTRAINT invoices_status_check CHECK (((status)::text = ANY ((ARRAY['PENDING'::character varying, 'PAID'::character varying, 'CANCELLED'::character varying])::text[]))),
+	CONSTRAINT invoices_user_type_check CHECK (((user_type)::text = ANY ((ARRAY['ADMIN'::character varying, 'USER'::character varying])::text[])))
 );
+CREATE INDEX idx_invoices_branch_id ON public.invoices USING btree (branch_id);
 
 
 
@@ -1393,7 +1395,6 @@ CREATE TABLE public.api_call_details (
 );
 
 
-
 CREATE OR REPLACE FUNCTION insert_api_call(
     chn CHAR(1),               -- Canal (M o W)
     origin INET,               -- Dirección IP
@@ -1577,6 +1578,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
 CREATE OR REPLACE FUNCTION public.reset_pass_user(
     p_email VARCHAR(255),
     p_pass VARCHAR(255)
@@ -1597,7 +1599,7 @@ BEGIN
 	ELSE
 		-- Actualizar el campo confirmed a true
 	    UPDATE public.up_users
-	    SET password = p_pass
+	    SET password = p_pass, reset_password_token = ''
 	    WHERE email = p_email
 		RETURNING id INTO userId;
 	
@@ -1608,7 +1610,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 ----
-
 
 
 --
@@ -2025,7 +2026,7 @@ VALUES
 
 INSERT INTO public.error_messages (error_code, error_message, created_at, updated_at, created_by_user_id, updated_by_user_id, user_type)
 VALUES
-('USR09', 'El enlace de confirmación no es válido o ha expirado.', NOW(), NOW(), 0, 0, 'ADMIN');
+('USR09', 'El enlace no es válido o ha expirado.', NOW(), NOW(), 0, 0, 'ADMIN');
 
 
 INSERT INTO public.error_messages (error_code, error_message, created_at, updated_at, created_by_user_id, updated_by_user_id, user_type)
@@ -2074,6 +2075,57 @@ VALUES (
     'ADMIN'  -- Asumiendo que el tipo de usuario es 'ADMIN'
 );
 
+
+
+
+
+
+
+
+INSERT INTO public.up_permissions (
+    action, 
+    role_id, 
+    created_by_user_id, 
+    updated_by_user_id, 
+    user_type
+) 
+VALUES (
+    'API::/api/companies::GET', 
+    1, 
+    1,  -- Suponiendo que el id del usuario que crea y actualiza es 1
+    1,  -- Suponiendo que el id del usuario que crea y actualiza es 1
+    'ADMIN'  -- Asumiendo que el tipo de usuario es 'ADMIN'
+);
+
+INSERT INTO public.up_permissions (
+    action, 
+    role_id, 
+    created_by_user_id, 
+    updated_by_user_id, 
+    user_type
+) 
+VALUES (
+    'API::/api/companies::POST', 
+    1, 
+    1,  -- Suponiendo que el id del usuario que crea y actualiza es 1
+    1,  -- Suponiendo que el id del usuario que crea y actualiza es 1
+    'ADMIN'  -- Asumiendo que el tipo de usuario es 'ADMIN'
+);
+
+INSERT INTO public.up_permissions (
+    action, 
+    role_id, 
+    created_by_user_id, 
+    updated_by_user_id, 
+    user_type
+) 
+VALUES (
+    'API::/api/companies::PUT', 
+    1, 
+    1,  -- Suponiendo que el id del usuario que crea y actualiza es 1
+    1,  -- Suponiendo que el id del usuario que crea y actualiza es 1
+    'ADMIN'  -- Asumiendo que el tipo de usuario es 'ADMIN'
+);
 
 
 --
@@ -2336,3 +2388,108 @@ VALUES (
 --
 --
 --
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+
+
+
+
+
+
+
+/*
+
+
+select * from api_call_details order by id desc;
+
+select * from up_users;
+
+select * from audit_logs;
+
+
+
+select * from error_messages;
+*/

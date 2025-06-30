@@ -22,7 +22,8 @@ export const login = logApiMiddleware(async (req = request, res = response) => {
     const isMatch = await bcryptjs.compare(password, pass)
     // eslint-disable-next-line
     if (!isMatch) { throw { status: 401, code: 'USR01' } }
-    const jwt = await generate({ identifier, password, role, user, origin, channel, uType })
+    // const jwt = await generate({ identifier, password, role, user, origin, channel, uType })
+    const jwt = await generate({ identifier, role, user, origin, channel, uType })
     // eslint-disable-next-line
     if (!jwt) throw { status: 500, code: 500, message: 'Error al generar jwt' }
 
