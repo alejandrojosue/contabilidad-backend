@@ -14,7 +14,8 @@ import {
   errorMessagesRoutes,
   jobRoutes,
   userRoutes,
-  paymentPlanRoutes
+  paymentPlanRoutes,
+  productReturnRoutes
 } from '../routes/routes.js'
 
 import {
@@ -33,7 +34,8 @@ export default class Server {
       companies: '/api/companies',
       customers: '/api/customers',
       users: '/api/users',
-      paymentPlans: '/api/payment-plans'
+      paymentPlans: '/api/payment-plans',
+      productReturns: '/api/product-returns'
     }
 
     // Configuración de Swagger
@@ -89,7 +91,8 @@ export default class Server {
     this.app.use('/api/error-messages', errorMessagesRoutes)
     this.app.use('/api/job', jobRoutes)
     this.app.use(this.paths.users, verifyToken, checkPermissions, userRoutes)
-    this.app.use(this.paths.paymentPlans, paymentPlanRoutes)
+    this.app.use(this.paths.paymentPlans, verifyToken, paymentPlanRoutes)
+    this.app.use(this.paths.productReturns, verifyToken, productReturnRoutes)
   }
 
   listen () {

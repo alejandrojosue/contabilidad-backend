@@ -7,6 +7,16 @@ import errorMessagesRoutes from './errorMessage.route.js'
 import jobRoutes from './job.route.js'
 import userRoutes from './user.route.js'
 import paymentPlanRoutes from './paymentPlan.route.js'
+import productReturnRoutes from './productReturn.route.js'
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
 
 export {
   apiCallsRoutes,
@@ -17,5 +27,6 @@ export {
   errorMessagesRoutes,
   jobRoutes,
   userRoutes,
-  paymentPlanRoutes
+  paymentPlanRoutes,
+  productReturnRoutes
 }
