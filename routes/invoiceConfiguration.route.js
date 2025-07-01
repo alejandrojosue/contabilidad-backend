@@ -55,7 +55,7 @@ const router = Router()
  *       202:
  *         description: Procesando la solicitud
  */
-router.get('/', makeController('getInvoiceConfigurations'))
+router.get('/', makeController('invoiceConfiguration.get'))
 
 /**
  * @swagger
@@ -78,7 +78,7 @@ router.get('/', makeController('getInvoiceConfigurations'))
  *       404:
  *         description: Configuración no encontrada
  */
-router.get('/:companyId', makeController('getInvoiceConfigurationByCompanyId'))
+router.get('/:companyId', makeController('invoiceConfiguration.getByCompanyId'))
 
 /**
  * @swagger
@@ -117,7 +117,7 @@ router.post('/', [
     .notEmpty().isIn(['1', '2', '3']),
 
   fieldsValidate
-], makeController('createInvoiceConfiguration'))
+], makeController('invoiceConfiguration.create'))
 
 /**
  * @swagger
@@ -164,6 +164,6 @@ router.put('/:companyId', [
   check('cai').optional().isLength({ min: 3, max: 50 }),
   check('invoiceType').optional().isIn(['1', '2', '3']),
   fieldsValidate
-], makeController('updateInvoiceConfiguration'))
+], makeController('invoiceConfiguration.update'))
 
 export default router

@@ -29,7 +29,7 @@ const router = Router()
  *               items:
  *                 type: object
  */
-router.get('/', makeController('getStrapiAdminRoles'))
+router.get('/', makeController('adminRole.get'))
 
 /**
  * @swagger
@@ -52,7 +52,7 @@ router.get('/', makeController('getStrapiAdminRoles'))
  *             schema:
  *               type: object
  */
-router.get('/:id', makeController('getStrapiAdminRoleById'))
+router.get('/:id', makeController('adminRole.getById'))
 
 /**
  * @swagger
@@ -90,7 +90,7 @@ router.post('/', [
   check('description', 'El campo description debe ser texto')
     .optional().isString(),
   fieldsValidate
-], makeController('createStrapiAdminRole'))
+], makeController('adminRole.create'))
 
 /**
  * @swagger
@@ -132,6 +132,6 @@ router.put('/:id', [
   check('description', 'El campo description debe ser texto')
     .optional().isString(),
   fieldsValidate
-], makeController('updateStrapiAdminRole'))
+], makeController('adminRole.update'))
 
 export default router

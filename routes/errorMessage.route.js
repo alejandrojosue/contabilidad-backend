@@ -78,7 +78,7 @@ router.post('/', [
 
   check('errorMessage', 'El campo errorMessage es obligatorio')
     .notEmpty().isLength({ min: 3 }).withMessage('El campo errorMessage debe tener al menos 3 caracteres')
-], fieldsValidate, makeController('createErrorMessage'))
+], fieldsValidate, makeController('errorMessage.create'))
 
 /**
  * @swagger
@@ -116,6 +116,6 @@ router.post('/', [
 router.put('/:errorCode', [
   check('errorMessage', 'El campo errorMessage debe tener al menos 3 caracteres')
     .optional().isLength({ min: 3 })
-], fieldsValidate, makeController('updateErrorMessage'))
+], fieldsValidate, makeController('errorMessage.update'))
 
 export default router

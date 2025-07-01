@@ -33,6 +33,24 @@ const router = Router()
 
 /**
  * @swagger
+ * /company-payment:
+ *   get:
+ *     summary: Obtiene los pagos de las empresas
+ *     tags: [CompanyPayment]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       202:
+ *         description: Procesando la solicitud
+ *       400:
+ *         description: Error en la solicitud
+ *       401:
+ *         description: No autorizado
+ */
+router.get('/', makeController('companyPayment.get'))
+
+/**
+ * @swagger
  * /company-payments:
  *   get:
  *     summary: Obtiene los pagos de la empresa asociada al usuario
@@ -43,7 +61,7 @@ const router = Router()
  *       202:
  *         description: Pagos obtenidos exitosamente
  */
-router.get('/', makeController('getCompanyPaymentByUser'))
+router.get('/user/:id', makeController('companyPayment.getByUserId'))
 
 /**
  * @swagger
@@ -88,7 +106,7 @@ router.post('/', [
   check('amountPaid', 'El campo amountPaid es obligatorio')
     .notEmpty().isDecimal().withMessage('El campo amountPaid debe ser un número decimal')
 
-], fieldsValidate, makeController('createCompanyPayment'))
+], fieldsValidate, makeController('companyPayment.create'))
 
 /**
  * @swagger
@@ -138,6 +156,6 @@ router.put('/:id', [
   check('amountPaid', 'El campo amountPaid debe ser un número decimal')
     .optional().isDecimal()
 
-], fieldsValidate, makeController('updateCompanyPayment'))
+], fieldsValidate, makeController('companyPayment.update'))
 
 export default router

@@ -55,7 +55,7 @@ const router = Router()
  *       202:
  *         description: Procesando la solicitud
  */
-router.get('/', makeController('getQuotationDetails'))
+router.get('/', makeController('quotationDetail.get'))
 
 /**
  * @swagger
@@ -78,7 +78,7 @@ router.get('/', makeController('getQuotationDetails'))
  *       404:
  *         description: Cotización no encontrada
  */
-router.get('/:quotation_number', makeController('getQuotationDetailByNumber'))
+router.get('/:quotation_number', makeController('quotationDetail.getByQuotationNumber'))
 
 /**
  * @swagger
@@ -112,7 +112,7 @@ router.post('/', [
   check('discount', 'El campo discount es obligatorio y debe ser un número mayor o igual a 0')
     .notEmpty().isFloat({ min: 0 }),
   fieldsValidate
-], makeController('createQuotationDetail'))
+], makeController('quotationDetail.create'))
 
 /**
  * @swagger
@@ -164,6 +164,6 @@ router.put('/:quotation_number/:product_code', [
   check('discount', 'El campo discount debe ser un número mayor o igual a 0')
     .optional().isFloat({ min: 0 }),
   fieldsValidate
-], makeController('updateQuotationDetail'))
+], makeController('quotationDetail.update'))
 
 export default router

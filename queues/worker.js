@@ -1,46 +1,36 @@
-import { Worker } from 'bullmq'
-import Redis from 'ioredis'
-import * as companyServices from '../services/company.service.js'
+import { resolveServiceFunction } from './resolver.js'
 import { processAPIDetails } from '../helpers/api_call.js'
 import { errorMessages } from '../helpers/error-messages.js'
 
-const redisConnection = new Redis({ host: '127.0.0.1', port: 6379, maxRetriesPerRequest: null })
-
-const serviceMap = {
-  ...companyServices
-}
-
-const processor = async (job) => {
+export const processJob = async (job) => {
   const { body, params, query, user, auditRef, serviceFunctionName } = job.data
-
-  const serviceFunction = serviceMap[serviceFunctionName]
-
-  if (!serviceFunction) {
-    throw new Error(`Servicio no encontrado: ${serviceFunctionName}`)
-  }
-
   try {
-    await serviceFunction({ body, params, query, user })
-
+    const serviceFunction = resolveServiceFunction(serviceFunctionName)
+    const response = await serviceFunction({ body, params, query, user })
+    const message = await errorMessages({ errorCode: '0000' })
     await processAPIDetails({
       ref: auditRef,
       trm1: 'RE',
       trm2: '0000',
       trm3: '',
-      trm4: `${serviceFunctionName} ejecutado correctamente`
+      trm4: message
+    })
+    await processAPIDetails({
+      ref: auditRef,
+      trm1: 'DA',
+      trm2: '',
+      trm3: '',
+      trm4: Object.values(response).join('|')
     })
   } catch (error) {
-    const errorMessage = await errorMessages({ errorCode: error.code })
+    const errorMessage = error.message ?? await errorMessages({ errorCode: error.code })
     await processAPIDetails({
       ref: auditRef,
       trm1: 'RE',
-      trm2: error.status ?? 500,
+      trm2: 'status: ' + error.status ?? 500,
       trm3: error.code,
-      trm4: error.message || errorMessage
+      trm4: errorMessage
     })
     throw error
   }
 }
-
-new Worker('batchQueue', processor, { connection: redisConnection })
-new Worker('urgentQueue', processor, { connection: redisConnection })

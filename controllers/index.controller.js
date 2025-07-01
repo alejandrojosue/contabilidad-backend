@@ -14,11 +14,15 @@ export const controller = logApiMiddleware(async (req = request, res = response)
   }
   const urgentQueue = QueueFactory.getQueue('urgentQueue')
   const batchQueue = QueueFactory.getQueue('batchQueue')
+
+  const body = req.body
+  const info = req.info?.uid ?? { user: body?.user, uType: body?.uType }
+
   const jobData = {
     body: req.body,
     params: req.params,
     query: req.query,
-    user: req.info?.uid,
+    user: info,
     functionName: req.serviceFunctionName,
     auditRef: res.locals.auditRef // ← Si quieres pasar el ref al worker
   }

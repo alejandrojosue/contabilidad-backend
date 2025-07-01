@@ -1,5 +1,7 @@
-import company from './company.service.js'
+import * as company from './company.service.js'
+import * as product from './product.service.js'
 
-export {
-  company
+export const serviceRegistry = {
+  company,
+  product
 }

@@ -2,7 +2,6 @@ import { Router } from 'express'
 import { check } from 'express-validator'
 
 import { fieldsValidate } from '../middlewares/index.js'
-import { getCompanyByUser } from '../controllers/company.controller.js'
 import { makeController } from '../helpers/make-controller.js'
 
 const router = Router()
@@ -54,7 +53,7 @@ const router = Router()
  *             schema:
  *               $ref: '#/components/schemas/Company'
  */
-router.get('/', getCompanyByUser)
+router.get('/user/:id', makeController('company.getByUserId'))
 
 /**
  * @swagger
@@ -65,7 +64,7 @@ router.get('/', getCompanyByUser)
  *     security:
  *       - bearerAuth: []
  *     responses:
- *       202:
+ *       200:
  *         description: Respuesta exitosa
  */
 router.get('/companies-all', () => {})
@@ -116,7 +115,7 @@ router.post('/', [
   check('phones', 'El campo teléfonos debe estar en formato Array').optional().isArray(),
   check('planId', 'El plan es obligatorio').not().isEmpty().isNumeric().withMessage('El plan debe ser un número'),
   fieldsValidate
-], makeController('createCompany'))
+], makeController('company.create'))
 
 /**
  * @swagger
@@ -169,6 +168,6 @@ router.put('/:rtn', [
   check('rtn', 'El RTN debe tener una longitud de 14 caracteres').isLength({ min: 14, max: 14 }),
   check('isActive', 'El campo isActive debe ser un booleano').isBoolean(),
   fieldsValidate
-], makeController('updateCompany'))
+], makeController('company.update'))
 
 export default router

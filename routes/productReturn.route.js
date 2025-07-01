@@ -72,7 +72,7 @@ const router = Router()
  *       202:
  *         description: Procesando la solicitud
  */
-router.get('/', makeController('getProductReturns'))
+router.get('/', makeController('productReturn.get'))
 
 /**
  * @swagger
@@ -94,7 +94,7 @@ router.get('/', makeController('getProductReturns'))
  *       404:
  *         description: Devolución no encontrada
  */
-router.get('/:id', makeController('getProductReturnById'))
+router.get('/:id', makeController('productReturn.getById'))
 
 /**
  * @swagger
@@ -128,7 +128,7 @@ router.post('/', [
   body('details.*.unit_price').notEmpty().isFloat({ min: 0 }),
 
   fieldsValidate
-], makeController('createProductReturn'))
+], makeController('productReturn.create'))
 
 /**
  * @swagger
@@ -174,6 +174,6 @@ router.put('/:id', [
   check('reason').optional().isLength({ max: 255 }),
   check('status').optional().isIn(['PENDING', 'COMPLETED', 'CANCELLED']),
   fieldsValidate
-], makeController('updateProductReturn'))
+], makeController('productReturn.update'))
 
 export default router

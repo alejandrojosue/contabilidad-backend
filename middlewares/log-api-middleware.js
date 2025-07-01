@@ -58,7 +58,7 @@ export const logApiMiddleware = (handler) => {
 
       return result
     } catch (error) {
-      const errorMessage = await errorMessages({ errorCode: error.code })
+      const errorMessage = error.message ?? await errorMessages({ errorCode: error.code })
       // Registrar error en `processAPIDetails`
       const trm2 = error.status ?? 500
       await processAPIDetails({
@@ -66,7 +66,7 @@ export const logApiMiddleware = (handler) => {
         trm1: 'RE',
         trm2: 'status: ' + trm2,
         trm3: error.code,
-        trm4: error.message || errorMessage
+        trm4: errorMessage
       })
 
       res.status(trm2).json({

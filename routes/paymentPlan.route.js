@@ -51,7 +51,7 @@ const router = Router()
  *       200:
  *         description: Listado de planes de pago
  */
-router.get('/', makeController('getPaymentPlans'))
+router.get('/', makeController('paymentPlan.get'))
 
 /**
  * @swagger
@@ -73,7 +73,7 @@ router.get('/', makeController('getPaymentPlans'))
  *       404:
  *         description: Plan no encontrado
  */
-router.get('/:id', makeController('getPaymentPlanById'))
+router.get('/:id', makeController('paymentPlan.getById'))
 
 /**
  * @swagger
@@ -106,7 +106,7 @@ router.post('/', [
     .optional().isArray(),
 
   fieldsValidate
-], makeController('createPaymentPlan'))
+], makeController('paymentPlan.create'))
 
 /**
  * @swagger
@@ -150,6 +150,6 @@ router.put('/:id', [
   check('price').optional().isFloat({ min: 0 }),
   check('includedItems').optional().isArray(),
   fieldsValidate
-], makeController('updatePaymentPlan'))
+], makeController('paymentPlan.update'))
 
 export default router

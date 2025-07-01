@@ -29,7 +29,7 @@ const router = Router()
  *               items:
  *                 type: object
  */
-router.get('/', makeController('getStrapiAdminPermissions'))
+router.get('/', makeController('adminPermission.get'))
 
 /**
  * @swagger
@@ -52,7 +52,7 @@ router.get('/', makeController('getStrapiAdminPermissions'))
  *             schema:
  *               type: object
  */
-router.get('/:id', makeController('getStrapiAdminPermissionById'))
+router.get('/:id', makeController('adminPermission.getById'))
 
 /**
  * @swagger
@@ -77,7 +77,7 @@ router.get('/:id', makeController('getStrapiAdminPermissionById'))
  *               items:
  *                 type: object
  */
-router.get('/role/:id', makeController('getStrapiAdminPermissionByRoleId'))
+router.get('/role/:id', makeController('adminPermission.getByRoleId'))
 
 /**
  * @swagger
@@ -122,7 +122,7 @@ router.post('/', [
   check('roleId', 'El campo roleId debe ser un número')
     .optional().isNumeric(),
   fieldsValidate
-], makeController('createStrapiAdminPermission'))
+], makeController('adminPermission.create'))
 
 /**
  * @swagger
@@ -172,6 +172,6 @@ router.put('/:id', [
   check('roleId', 'El campo roleId debe ser un número')
     .optional().isNumeric(),
   fieldsValidate
-], makeController('updateStrapiAdminPermission'))
+], makeController('adminPermission.update'))
 
 export default router

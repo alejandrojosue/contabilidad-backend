@@ -49,7 +49,7 @@ const router = Router()
  *               items:
  *                 $ref: '#/components/schemas/ChartAccount'
  */
-router.get('/', makeController('getChartAccounts'))
+router.get('/', makeController('chartAccount.get'))
 
 /**
  * @swagger
@@ -95,7 +95,7 @@ router.post('/', [
   check('type', 'El campo type es obligatorio')
     .notEmpty()
     .isLength({ min: 3, max: 3 }).withMessage('El campo type debe tener 3 caracteres')
-], fieldsValidate, makeController('createChartAccount'))
+], fieldsValidate, makeController('chartAccount.create'))
 
 /**
  * @swagger
@@ -146,6 +146,6 @@ router.put('/:id', [
   check('type', 'El campo type debe tener 3 caracteres')
     .optional()
     .isLength({ min: 3, max: 3 })
-], fieldsValidate, makeController('updateChartAccount'))
+], fieldsValidate, makeController('chartAccount.update'))
 
 export default router

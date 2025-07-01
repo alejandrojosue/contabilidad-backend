@@ -89,7 +89,7 @@ const router = Router()
  *       202:
  *         description: Facturas obtenidas exitosamente
  */
-router.get('/', makeController('getInvoices'))
+router.get('/', makeController('invoices.get'))
 
 /**
  * @swagger
@@ -112,7 +112,7 @@ router.get('/', makeController('getInvoices'))
  *       404:
  *         description: Factura no encontrada
  */
-router.get('/:id', makeController('getInvoices'))
+router.get('/:id', makeController('invoices.getById'))
 
 /**
  * @swagger
@@ -159,6 +159,6 @@ router.post('/', [
   body('details.*.discount').optional().isFloat({ min: 0 }),
 
   fieldsValidate
-], makeController('createInvoiceWithDetails'))
+], makeController('invoices.create'))
 
 export default router

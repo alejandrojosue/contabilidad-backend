@@ -71,7 +71,7 @@ const router = Router()
  *       202:
  *         description: Procesando la solicitud
  */
-router.get('/', makeController('getProducts'))
+router.get('/', makeController('product.get'))
 
 /**
  * @swagger
@@ -94,13 +94,13 @@ router.get('/', makeController('getProducts'))
  *       404:
  *         description: Producto no encontrado
  */
-router.get('/:code', makeController('getProductByCode'))
+router.get('/:code', makeController('product.getByCode'))
 
 /**
  * @swagger
  * /products:
  *   post:
- *     summary: Crea un nuevo producto
+ *     summary: Crea un nuevo producto con sus categorías
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -109,7 +109,47 @@ router.get('/:code', makeController('getProductByCode'))
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Product'
+ *             type: object
+ *             required:
+ *               - code
+ *               - name
+ *               - description
+ *               - purchase_price
+ *               - price
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 maxLength: 50
+ *                 description: Código único del producto
+ *               name:
+ *                 type: string
+ *                 maxLength: 255
+ *               description:
+ *                 type: string
+ *               purchase_price:
+ *                 type: number
+ *                 minimum: 0
+ *               price:
+ *                 type: number
+ *                 minimum: 0
+ *               tax:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 100
+ *               stock:
+ *                 type: integer
+ *                 minimum: 0
+ *               is_active:
+ *                 type: boolean
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               categories:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 description: IDs de categorías asociadas al producto
  *     responses:
  *       202:
  *         description: Procesando la solicitud
@@ -126,14 +166,15 @@ router.post('/', [
   check('stock').optional().isInt({ min: 0 }),
   check('is_active').optional().isBoolean(),
   check('images').optional().isArray(),
+  check('categories', 'El campo categories debe ser un array de IDs numéricos').optional().isArray(),
+  check('categories.*', 'Cada categoría debe ser un número entero positivo').optional().isInt({ min: 1 }),
   fieldsValidate
-], makeController('createProduct'))
-
+], makeController('product.create'))
 /**
  * @swagger
  * /products/{code}:
  *   put:
- *     summary: Actualiza un producto existente
+ *     summary: Actualiza un producto existente y sus categorías
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -143,6 +184,7 @@ router.post('/', [
  *         required: true
  *         schema:
  *           type: string
+ *           maxLength: 50
  *         description: Código único del producto
  *     requestBody:
  *       required: true
@@ -153,22 +195,33 @@ router.post('/', [
  *             properties:
  *               name:
  *                 type: string
+ *                 maxLength: 255
  *               description:
  *                 type: string
  *               purchase_price:
  *                 type: number
+ *                 minimum: 0
  *               price:
  *                 type: number
+ *                 minimum: 0
  *               tax:
  *                 type: number
+ *                 minimum: 0
+ *                 maximum: 100
  *               stock:
  *                 type: integer
+ *                 minimum: 0
  *               is_active:
  *                 type: boolean
  *               images:
  *                 type: array
  *                 items:
  *                   type: string
+ *               categories:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 description: IDs de categorías asociadas al producto
  *     responses:
  *       202:
  *         description: Procesando la solicitud
@@ -186,7 +239,9 @@ router.put('/:code', [
   check('stock').optional().isInt({ min: 0 }),
   check('is_active').optional().isBoolean(),
   check('images').optional().isArray(),
+  check('categories', 'El campo categories debe ser un array de IDs numéricos').optional().isArray(),
+  check('categories.*', 'Cada categoría debe ser un número entero positivo').optional().isInt({ min: 1 }),
   fieldsValidate
-], makeController('updateProduct'))
+], makeController('product.update'))
 
 export default router

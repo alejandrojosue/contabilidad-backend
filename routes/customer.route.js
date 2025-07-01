@@ -98,7 +98,7 @@ router.post('/', [
   check('phone').isLength({ min: 8, max: 8 }).withMessage('El campo phone debe tener 8 caracteres'),
   check('address').isLength({ min: 5, max: 200 }).withMessage('El campo address debe tener entre 5 y 200 caracteres'),
   fieldsValidate
-], makeController('createCustomer'))
+], makeController('customer.create'))
 
 /**
  * @swagger
@@ -152,6 +152,6 @@ router.put('/:id', [
   check('address').isLength({ min: 5, max: 200 }).withMessage('El campo address debe tener entre 5 y 200 caracteres'),
   check('isActive', 'El campo isActive debe ser un valor booleano').isBoolean(),
   fieldsValidate
-], makeController('updateCustomer'))
+], makeController('customer.update'))
 
 export default router
