@@ -3,19 +3,10 @@ import { errorMessages } from '../helpers/error-messages.js'
 export const logApiMiddleware = (handler) => {
   return async (req, res, next) => {
     const info = req.info?.uid
-    let user, origin, channel, uType
-    if (info) {
-      user = info.user
-      origin = info.ipAddress
-      channel = info.channel
-      uType = info.uType
-    } else {
-      const body = req.body
-      user = body.user
-      origin = body.ipAddress
-      channel = body.channel
-      uType = body.uType
-    }
+    const user = info?.user || req.body?.user
+    const origin = info?.ipAddress || req.body?.ipAddress
+    const channel = info?.channel || req.body?.channel
+    const uType = info?.uType || req.body?.uType
 
     // Registrar inicio de la API
     const ref = await processAPI({

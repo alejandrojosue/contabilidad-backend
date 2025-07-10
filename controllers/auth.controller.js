@@ -2,7 +2,7 @@ import { logApiMiddleware } from '../middlewares/log-api-middleware.js'
 import { pool } from '../database/config.js'
 import bcryptjs from 'bcryptjs'
 import { request, response } from 'express'
-import { decodeAndVerifyToken, decodeToken, generate } from '../helpers/jwt-generate.js'
+import { decodeAndVerifyToken, decodeToken, generate, generateRefreshToken } from '../helpers/jwt-generate.js'
 import { sendConfirmationEmail, sendRecoveryPassEmail } from '../helpers/send-email.js'
 import { API_SALT } from '../config/admin.js'
 
@@ -22,15 +22,20 @@ export const login = logApiMiddleware(async (req = request, res = response) => {
     const isMatch = await bcryptjs.compare(password, pass)
     // eslint-disable-next-line
     if (!isMatch) { throw { status: 401, code: 'USR01' } }
-    // const jwt = await generate({ identifier, password, role, user, origin, channel, uType })
+
     const jwt = await generate({ identifier, role, user, origin, channel, uType })
+    const refreshToken = await generateRefreshToken({ user, role })
+
     // eslint-disable-next-line
     if (!jwt) throw { status: 500, code: 500, message: 'Error al generar jwt' }
+
+    // eslint-disable-next-line
+    if (!refreshToken) throw { status: 500, code: 500, message: 'Error al generar jwt refresh' }
 
     res.locals.trm1 = ['RE', 'DA']
     res.locals.trm2 = ['0000']
     res.locals.trm3 = ['', `${user}|${identifier}|${username}|${role}`]
-
+    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true })
     res.json({
       id: user,
       email: identifier,
@@ -167,7 +172,7 @@ export const verifyTokenPasswordReset = logApiMiddleware(async (req = request, r
     if (!decoded?.uid?.email) throw { status: 400, code: 'USR09' } //El enlace no es válido o ha expirado.
     const result = await pool.query('select id, username from up_users where reset_password_token = $1', [token])
     // eslint-disable-next-line
-    if (result?.rowCount === 0) throw { status: 400, code: 'USR09'} //El enlace no es válido o ha expirado.
+    if (result?.rowCount === 0) throw { status: 400, code: 'USR09' } //El enlace no es válido o ha expirado.
     const email = decoded?.uid?.email
     const userId = result?.rows[0]?.id
     const username = result?.rows[0]?.username
@@ -178,6 +183,34 @@ export const verifyTokenPasswordReset = logApiMiddleware(async (req = request, r
       id: userId,
       email,
       username
+    })
+  } catch (error) {
+    // eslint-disable-next-line
+    throw { status: error.status ?? 500, code: error.code, message: error.message }
+  }
+})
+
+export const refreshToken = logApiMiddleware(async (req = request, res = response) => {
+  const { refreshToken } = req.cookies.refreshToken
+
+  try {
+    // Verificamos si el token es válido y decodificamos el payload
+    const decoded = decodeAndVerifyToken(refreshToken, true)
+    // eslint-disable-next-line
+    if (!decoded?.uid) throw { status: 401, code: 'TOK01', message: 'Refresh token inválido o expirado.' }
+
+    const uid = decoded.uid
+
+    // Generar nuevo access token
+    const newAccessToken = await generate({ uid })
+
+    // eslint-disable-next-line
+    if (!newAccessToken) throw { status: 500, code: 500, message: 'Error al generar nuevo access token' }
+
+    res.locals.trm1 = ['RE', 'DA']
+    res.locals.trm2 = ['0000']
+    res.status(200).json({
+      accessToken: newAccessToken
     })
   } catch (error) {
     // eslint-disable-next-line

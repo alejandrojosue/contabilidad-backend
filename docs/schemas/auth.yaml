@@ -1,0 +1,211 @@
+tags:
+  - name: Auth
+    description: Endpoints relacionados con la autenticación de usuarios
+
+paths:
+  /auth/login:
+    post:
+      summary: Inicia sesión en el sistema
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identifier
+                - password
+                - ipAddress
+                - channel
+              properties:
+                identifier:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                ipAddress:
+                  type: string
+                channel:
+                  type: string
+                  enum: [W, M]
+      responses:
+        '200':
+          description: Sesión iniciada correctamente
+        '400':
+          description: Error de validación o autenticación
+
+  /auth/register:
+    post:
+      summary: Registra un nuevo usuario
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+                - idRol
+                - email
+                - ipAddress
+                - channel
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                idRol:
+                  type: integer
+                email:
+                  type: string
+                  format: email
+                ipAddress:
+                  type: string
+                channel:
+                  type: string
+                  enum: [W, M]
+      responses:
+        '201':
+          description: Usuario registrado exitosamente
+        '400':
+          description: Error de validación o registro
+
+  /auth/confirm:
+    post:
+      summary: Confirma el registro de un usuario
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - ipAddress
+                - channel
+              properties:
+                token:
+                  type: string
+                ipAddress:
+                  type: string
+                channel:
+                  type: string
+                  enum: [W, M]
+      responses:
+        '200':
+          description: Cuenta confirmada correctamente
+        '400':
+          description: Error de validación o confirmación
+
+  /auth/forgot-password:
+    post:
+      summary: Solicita un enlace para recuperar la contraseña
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - ipAddress
+                - channel
+              properties:
+                email:
+                  type: string
+                  format: email
+                ipAddress:
+                  type: string
+                channel:
+                  type: string
+                  enum: [W, M]
+      responses:
+        '200':
+          description: Enlace de recuperación enviado
+        '400':
+          description: Error de validación o envío de enlace
+
+  /auth/verify-token:
+    post:
+      summary: Verifica la validez de un token de recuperación
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - ipAddress
+                - channel
+              properties:
+                token:
+                  type: string
+                ipAddress:
+                  type: string
+                channel:
+                  type: string
+                  enum: [W, M]
+      responses:
+        '200':
+          description: Token válido
+
+  /auth/password-reset:
+    post:
+      summary: Cambia la contraseña de un usuario
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - ipAddress
+                - channel
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                ipAddress:
+                  type: string
+                channel:
+                  type: string
+                  enum: [W, M]
+      responses:
+        '200':
+          description: Contraseña actualizada correctamente
+
+  /auth/refresh-token:
+    post:
+      summary: Renueva el access token usando el refresh token
+      tags: [Auth]
+      cookies:
+        refreshToken:
+          type: string
+          description: Refresh token almacenado en cookies
+      responses:
+        '200':
+          description: Access token renovado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    description: Nuevo token de acceso válido
+        '401':
+          description: Refresh token inválido o expirado
+        '500':
+          description: Error interno del servidor

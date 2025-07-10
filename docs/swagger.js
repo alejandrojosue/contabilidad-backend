@@ -20,7 +20,7 @@ const options = {
       // }
     ]
   },
-  apis: ['./routes/*.js'] // Ruta donde buscará los comentarios Swagger
+  apis: ['./docs/*/*.yaml'] // Ruta donde buscará los comentarios Swagger
 }
 
 const swaggerSpec = swaggerJSDoc(options)

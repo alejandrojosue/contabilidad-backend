@@ -23,6 +23,9 @@ import {
   notFoundMiddleware, verifyToken, checkPermissions
 } from '../middlewares/index.js'
 import { setupSwagger } from '../docs/swagger.js'
+import { printAsciiTable } from '../helpers/data-console.js'
+import { errorHandlerMiddleware } from '../middlewares/error-handler-middleware.js'
+import { checkConnection } from '../database/config.js'
 
 export default class Server {
   constructor () {
@@ -45,8 +48,12 @@ export default class Server {
 
     this.routes()
 
+    this.database()
+
     // Middleware para rutas no encontradas (404)
     this.app.use(notFoundMiddleware)
+
+    this.app.use(errorHandlerMiddleware)
   }
 
   middlewares () {
@@ -93,13 +100,27 @@ export default class Server {
     this.app.use(this.paths.users, verifyToken, checkPermissions, userRoutes)
     this.app.use(this.paths.paymentPlans, verifyToken, paymentPlanRoutes)
     this.app.use(this.paths.productReturns, verifyToken, productReturnRoutes)
+    this.app.use('/api/health', (req, res) => res.status(200).json({ status: 'OK' }))
+  }
+
+  async database () {
+    const dbConnected = await checkConnection()
+    if (!dbConnected) {
+      console.error('❌ La base de datos no está disponible. Saliendo...')
+    }
   }
 
   listen () {
     console.clear()
     this.app.listen(this.port, () => {
-      console.log('servidor corriendo en puerto', this.port)
-      console.log('http://localhost:' + this.port)
+      const launchedIn = process.env.NODE_ENV === 'production' ? 'Producción' : 'Desarrollo'
+      const data = {
+        'Nombre del servidor': process.env.SERVER_NAME || 'localhost',
+        'Servidor corriendo en puerto': this.port,
+        'Versión de Node.js': process.version,
+        Entorno: launchedIn
+      }
+      printAsciiTable(data)
     })
   }
 }

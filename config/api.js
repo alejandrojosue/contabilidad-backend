@@ -7,5 +7,6 @@ export const REST = {
   rateLimit: 5,
   mode: NODE_ENV,
   apiVersion: 'v1',
-  maxWaitingCount: 100 // Número máximo de trabajos pendientes en batchQueue antes de usar urgentQueue
+  maxWaitingCount: 100, // Número máximo de trabajos pendientes en batchQueue antes de usar urgentQueue
+  tokenExpiration: '15m' // Tiempo de expiración del token
 }

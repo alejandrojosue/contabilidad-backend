@@ -58,7 +58,9 @@ SYSCOM/
 ├── middlewares/             # Middlewares personalizados (validaciones, autenticaciones, etc.)
 ├── models/                  # Modelos y configuración del servidor (solo server.js)
 ├── public/                  # Archivos públicos (imágenes, recursos estáticos)
-├── route/                   # Definición de rutas de la API
+├── queues/                  # Archivos que encapsula la lógica de ejecución y procesamiento mediante colas.
+├── routes/                   # Definición de rutas de la API
+├── services/                   # Serán los encargados de procesamiento de datos para la base de datos
 └── package.json             # Configuración de dependencias y scripts
 ```
 

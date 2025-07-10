@@ -1,20 +1,52 @@
 import { Queue } from 'bullmq'
 import Redis from 'ioredis'
 
-const redisConnection = new Redis({ host: '127.0.0.1', port: 6379 })
+const redisConnection = new Redis({
+  host: '127.0.0.1',
+  port: 6379,
+  retryStrategy: (times) => {
+    return times >= 3 ? null : Math.min(times * 50, 2000)
+  }
+})
+
+redisConnection.on('connect', () => {
+  console.log('✅ Redis conectado correctamente')
+})
+
+redisConnection.on('error', (err) => {
+  console.error('❌ Redis error:', err.message)
+})
+
+redisConnection.ping((err, result) => {
+  if (err) {
+    console.error('❌ Redis no responde al ping:', err.message)
+  } else {
+    console.log('📡 Redis respondió al ping:', result)
+  }
+})
 
 class QueueFactory {
   static queues = {}
 
   static getQueue (queueName) {
     if (!this.queues[queueName]) {
-      this.queues[queueName] = new Queue(queueName, {
-        connection: redisConnection
-        // defaultJobOptions: {
-        //   removeOnComplete: false, // No borra jobs completados
-        //   removeOnFail: false // No borra jobs fallidos
-        // }
-      })
+      try {
+        this.queues[queueName] = new Queue(queueName, {
+          connection: redisConnection,
+          defaultJobOptions: {
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 1000 },
+            removeOnComplete: true,
+            removeOnFail: {
+              count: 100,
+              age: 1 * 60 * 60 * 1000 // 1h
+            }
+          }
+        })
+      } catch (error) {
+        console.error(`❌ Error creando cola ${queueName}:`, error.message)
+        throw error
+      }
     }
     return this.queues[queueName]
   }
@@ -24,8 +56,10 @@ class QueueFactory {
   }
 
   static async getJobCounts (queueName) {
-    const queue = this.getQueue(queueName)
-    return await queue.getJobCounts()
+    if (!this.queues[queueName]) {
+      throw new Error(`La cola ${queueName} no está inicializada`)
+    }
+    return await this.queues[queueName].getJobCounts()
   }
 
   static async getAllJobs (queueName) {
@@ -55,9 +89,7 @@ class QueueFactory {
 
   static async removeAllJobs (queueName) {
     const jobs = await this.getAllJobs(queueName)
-    for (const job of jobs) {
-      await job.remove()
-    }
+    await Promise.all(jobs.map(job => job.remove()))
     return true
   }
 }
